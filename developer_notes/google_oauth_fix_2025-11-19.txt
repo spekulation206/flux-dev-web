@@ -1,0 +1,41 @@
+Google OAuth Redirect URI Fix - November 19, 2025
+
+ISSUE
+=====
+Error 400: redirect_uri_mismatch when attempting Google OAuth sign-in.
+
+Root Cause:
+- NEXT_PUBLIC_APP_URL was set to http://localhost:3000 in Cloud Run
+- Google OAuth credentials didn't have Cloud Run URL in authorized redirect URIs
+
+SOLUTION APPLIED
+================
+1. Updated Cloud Run environment variable:
+   - Changed NEXT_PUBLIC_APP_URL from http://localhost:3000
+   - To: https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+
+2. Required Google Cloud Console Configuration:
+   - Add authorized redirect URI in Google Cloud Console
+   - URI: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+
+STEPS TO COMPLETE FIX
+=====================
+1. Go to Google Cloud Console: https://console.cloud.google.com/
+2. Navigate to: APIs & Services > Credentials
+3. Find your OAuth 2.0 Client ID: 310306714158-dm32scl60hr74q7llgprbct4qmcill1g.apps.googleusercontent.com
+4. Click Edit
+5. Under "Authorized redirect URIs", add:
+   https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+6. Save changes
+
+CURRENT CONFIGURATION
+=====================
+- Cloud Run URL: https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+- Redirect URI: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+- OAuth Client ID: 310306714158-dm32scl60hr74q7llgprbct4qmcill1g.apps.googleusercontent.com
+
+NOTE
+====
+After updating the redirect URI in Google Cloud Console, the OAuth flow should work correctly.
+The Cloud Run service has been updated with the correct NEXT_PUBLIC_APP_URL.
+

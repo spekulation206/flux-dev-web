@@ -1,0 +1,111 @@
+Google OAuth Redirect URI Mismatch - Troubleshooting Guide
+===========================================================
+
+ISSUE: Error 400: redirect_uri_mismatch persists after 15+ minutes
+
+VERIFIED CONFIGURATION
+=======================
+✓ Cloud Run Service URL: https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+✓ NEXT_PUBLIC_APP_URL: https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+✓ Redirect URI being sent: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+✓ OAuth Client ID: 310306714158-dm32scl60hr74q7llgprbct4qmcill1g.apps.googleusercontent.com
+
+COMMON CAUSES
+=============
+1. Redirect URI not added to Google Cloud Console
+2. Typo or formatting issue in redirect URI
+3. OAuth client in different Google Cloud project
+4. Multiple OAuth clients - wrong one being edited
+5. Changes not saved properly
+
+DETAILED TROUBLESHOOTING STEPS
+===============================
+
+Step 1: Verify OAuth Client Project
+-----------------------------------
+The OAuth client ID starts with: 310306714158
+This is the PROJECT NUMBER, not necessarily the project ID.
+
+Check which project this belongs to:
+- Go to: https://console.cloud.google.com/iam-admin/settings
+- Look for project number: 310306714158
+- Note the project ID (might be different from ancient-flag-474315-m8)
+
+Step 2: Locate the Correct OAuth Client
+---------------------------------------
+1. Go to: https://console.cloud.google.com/apis/credentials
+2. Make sure you're in the CORRECT project (check top dropdown)
+3. Search for: 310306714158-dm32scl60hr74q7llgprbct4qmcill1g
+4. If not found, check OTHER projects you have access to
+
+Step 3: Verify Redirect URI Format
+-----------------------------------
+The redirect URI MUST be EXACTLY:
+https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+
+Common mistakes:
+✗ http:// (must be https://)
+✗ Missing /api/auth/google/callback
+✗ Trailing slash: /api/auth/google/callback/
+✗ Extra spaces
+✗ Wrong domain (localhost, different Cloud Run URL)
+
+Step 4: Add/Update Redirect URI
+-------------------------------
+1. Click "Edit" on the OAuth client
+2. Scroll to "Authorized redirect URIs"
+3. Click "+ ADD URI"
+4. Paste EXACTLY: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+5. Click "Save" (wait for confirmation)
+6. Wait 2-3 minutes
+
+Step 5: Verify Multiple Projects
+---------------------------------
+If you have multiple Google Cloud projects:
+- Check ALL projects for OAuth clients
+- The client ID might be in a different project than Cloud Run
+- This is OK - OAuth clients can be in different projects
+
+Step 6: Test Again
+------------------
+After saving:
+1. Clear browser cache/cookies for the app
+2. Try OAuth flow again
+3. Check browser console for any additional errors
+
+ALTERNATIVE: Check OAuth Client via API
+========================================
+You can verify the OAuth client configuration using gcloud:
+
+gcloud auth application-default login
+gcloud projects list
+# Find project with number 310306714158
+gcloud config set project PROJECT_ID
+gcloud alpha iap oauth-clients list
+
+MANUAL VERIFICATION CHECKLIST
+==============================
+[ ] Located OAuth client in Google Cloud Console
+[ ] Verified project number matches: 310306714158
+[ ] Added redirect URI: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+[ ] Verified no trailing slash
+[ ] Verified https:// (not http://)
+[ ] Saved changes and saw confirmation
+[ ] Waited 2-3 minutes after saving
+[ ] Cleared browser cache
+[ ] Tested again
+
+NEXT STEPS IF STILL NOT WORKING
+================================
+1. Check Cloud Run logs for actual redirect_uri being sent:
+   gcloud run services logs read flux-dev-web --region us-central1 --limit 50
+
+2. Try creating a NEW OAuth client in the same project:
+   - Create new OAuth 2.0 Client ID
+   - Add redirect URI
+   - Update Cloud Run with new CLIENT_ID and CLIENT_SECRET
+
+3. Verify the OAuth consent screen is configured:
+   - Go to: APIs & Services > OAuth consent screen
+   - Ensure app is published or in testing mode with your email added
+

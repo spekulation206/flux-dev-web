@@ -1,0 +1,61 @@
+CRITICAL FINDING: OAuth Client in Different Project
+====================================================
+
+PROBLEM IDENTIFIED
+==================
+The OAuth client ID (310306714158-dm32scl60hr74q7llgprbct4qmcill1g) belongs to a 
+DIFFERENT Google Cloud project than where Cloud Run is deployed.
+
+Cloud Run Project:
+- Project ID: ancient-flag-474315-m8
+- Project Number: 207673485307
+
+OAuth Client Project:
+- Project Number: 310306714158
+- Project ID: UNKNOWN (need to find)
+
+SOLUTION OPTIONS
+================
+
+Option 1: Add Redirect URI to Existing OAuth Client (Recommended)
+------------------------------------------------------------------
+1. Find the project with number 310306714158:
+   - Go to: https://console.cloud.google.com/iam-admin/settings
+   - Look through all your projects
+   - Find project number: 310306714158
+
+2. Switch to that project in Google Cloud Console
+
+3. Go to: APIs & Services > Credentials
+
+4. Find OAuth client: 310306714158-dm32scl60hr74q7llgprbct4qmcill1g
+
+5. Add redirect URI: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+
+6. Save
+
+Option 2: Create New OAuth Client in Cloud Run Project
+-------------------------------------------------------
+1. Go to project: ancient-flag-474315-m8
+2. APIs & Services > Credentials > Create Credentials > OAuth 2.0 Client ID
+3. Application type: Web application
+4. Authorized redirect URIs: https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+5. Copy new CLIENT_ID and CLIENT_SECRET
+6. Update Cloud Run environment variables:
+   gcloud run services update flux-dev-web \
+     --region us-central1 \
+     --update-env-vars GOOGLE_CLIENT_ID=new_client_id,GOOGLE_CLIENT_SECRET=new_client_secret
+
+HOW TO FIND THE PROJECT
+========================
+Run this command to list all projects and find the one with number 310306714158:
+
+gcloud projects list --format="table(projectId,projectNumber,name)"
+
+Look for the row where PROJECT_NUMBER = 310306714158
+
+Then switch to that project:
+gcloud config set project PROJECT_ID_FROM_ABOVE
+
+Then add the redirect URI in that project's OAuth credentials.
+

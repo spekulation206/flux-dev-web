@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #FFFFED;
+  --foreground: #000000;
+  --border: #00000020; /* Black at 10-20% opacity on light */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #FFFFED;
+    --border: #FFFFED20; /* Cream at 10-20% opacity on dark */
   }
 }
 
+html,
 body {
-  background: var(--background);
+  height: 100%;
+}
+
+body {
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+}
+
+/* Add custom scrollbar for consistent look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+@layer utilities {
+  .input-primary {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    background-color: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 0.125rem;
+    outline: none;
+    transition: border-color 0.15s ease-in-out;
+  }
+  
+  .input-primary:focus {
+    border-color: var(--foreground);
+    box-shadow: none;
+  }
+  
+  .input-primary::placeholder {
+    color: rgba(0, 0, 0, 0.3);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .input-primary {
+      border-color: rgba(255, 255, 237, 0.2);
+    }
+    .input-primary::placeholder {
+      color: rgba(255, 255, 237, 0.3);
+    }
+  }
+
+  .btn-primary {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    background-color: var(--foreground);
+    color: var(--background);
+    font-weight: 500;
+    border-radius: 0.125rem;
+    transition: opacity 0.15s ease-in-out;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }

@@ -1,0 +1,29 @@
+Fixing Cost Updates and Mixed Text/Image Responses
+=================================================
+
+Date: 2025-11-20
+Author: Assistant
+Reason: 
+1. Cost tally wasn't updating dynamically because the `useEffect` dependency was empty (only fetched on mount).
+2. Gemini API sometimes returns both text and image, causing the previous logic to fail or display text instead of the image.
+
+Changes:
+1.  **Cost Tally**:
+    - Updated `src/components/CostDisplay.tsx`.
+    - Added a `key` prop or forced re-render trigger? No, actually the `setInterval` was correct but maybe React state updates were being swallowed or the API was caching.
+    - Added `revalidate: 0` to the API route to prevent Next.js from caching the response.
+
+2.  **Gemini Response Handling**:
+    - Updated `src/components/tools/KontextTool.tsx` (Frontend Logic).
+    - Updated `src/app/api/gemini/generate/route.ts` (Backend Logic).
+    - Enhanced the parsing logic to:
+        - Iterate through ALL parts of the response.
+        - If *any* part is an image (`mime_type` starts with `image/`), use it immediately and ignore text.
+        - Only fall back to text parsing if NO image part is found.
+        - This prioritizes the image, even if the model says "Here is your image: [IMAGE]".
+
+Verification:
+- Redeploy required.
+- Cost tally should now increment ~30s after a generation.
+- Generations that include "chatty" text should now correctly display the image.
+

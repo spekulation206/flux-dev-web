@@ -1,0 +1,23 @@
+Fixing Firestore Connection and Z-Index
+=========================================
+
+Date: 2025-11-20
+Author: Assistant
+Reason: User reported Prompt History is still obscured and data is not saving (likely Firestore connection issue).
+
+Changes:
+1.  **Z-Index Boost**:
+    - Increased z-index in `src/components/PromptHistory.tsx` from `100` to `9999`. This is a nuclear option to ensure it sits above absolutely everything.
+
+2.  **Firestore Initialization**:
+    - Updated `src/lib/firestore.ts` to explicitly include the `projectId: "golden-bonbon-327902"`.
+    - While `admin.initializeApp()` usually auto-detects this on Cloud Run, explicitly setting it avoids ambiguity if the environment variable `GOOGLE_CLOUD_PROJECT` isn't set by the runtime in some edge cases.
+    - Added `db.settings({ ignoreUndefinedProperties: true })` to prevent crashes if we accidentally save undefined values.
+
+3.  **Cost Display Robustness**:
+    - Updated `src/components/CostDisplay.tsx` to handle errors more gracefully but still retry.
+
+Verification:
+- The permissions command the user ran looked correct (`roles/datastore.user` was added).
+- If data still doesn't save after this, the next step is checking Cloud Run logs for "Firebase admin initialization error" or permission denied errors.
+

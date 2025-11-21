@@ -1,0 +1,28 @@
+Fix: Mobile Typing Performance Lag
+Date: 2025-11-20
+Author: AI Assistant
+
+Description:
+Refactored the prompt input mechanism across all major tools (KontextTool, CropMaskTool, VideoTool) to isolate text input state.
+
+Reason:
+The user reported significant lag and stuttering on iPhone, especially when typing in the prompt box.
+Investigation revealed that the prompt input was controlled by the parent component state.
+In components like KontextTool, this parent state update triggered a re-render of the entire component, including the "Generations" grid (which can contain multiple images) and other heavy UI elements.
+This caused expensive DOM diffing and layout recalculations on every keystroke, overwhelming the mobile browser's main thread.
+
+Solution:
+1. Created a new `PromptInput` component that manages its own local input state.
+2. Updated `KontextTool`, `CropMaskTool`, and `VideoTool` to use `PromptInput` instead of directly managing the prompt string in their own state.
+3. The parent components now only receive the final prompt value when the user submits (clicks Generate or presses Enter), decoupling the typing interaction from the heavy parent render cycle.
+
+Files Affected:
+- src/components/PromptInput.tsx (Created)
+- src/components/tools/KontextTool.tsx
+- src/components/tools/CropMaskTool.tsx
+- src/components/tools/VideoTool.tsx
+
+Testing:
+- Verified that typing in the new input component does not trigger re-renders of the parent.
+- Confirmed that the "Generate" action still works correctly and passes the prompt to the parent handler.
+

@@ -1,0 +1,17 @@
+Cloud Run Deployment Fix (2025-11-20)
+
+Description:
+Updated the redeployment script to force a new Cloud Run revision on every deployment.
+
+Changes:
+1.  `redeploy_cloud_run.sh`:
+    -   Added `DEPLOY_TIMESTAMP=$(date +%s)` as an environment variable to the `gcloud run deploy` command.
+    -   This configuration change forces Cloud Run to create a new revision, ensuring that the latest code and container image are actually used.
+
+Reason:
+-   Logs indicated that the active revision ID (`flux-dev-web-00031-zb5`) was not changing across deployments, meaning the service was stuck on an old version of the code.
+-   This prevented the debugging logs and fixes from appearing in production.
+
+Validation:
+-   The next run of the script will inject a unique timestamp, guaranteeing a configuration update and a fresh revision.
+

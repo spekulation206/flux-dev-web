@@ -1,0 +1,21 @@
+Lag & Reliability Fix Report
+Date: 2025-11-20
+
+Changes:
+1.  **Restored `resizeImage` Utility:**
+    -   Re-added `resizeImage` to `src/lib/utils.ts`.
+    -   Updated `KontextTool` to resize input images to max 1024px before sending to Gemini or Replicate.
+    -   This significantly reduces upload time and API timeouts, fixing the "super laggy" issue on iPhone (which captures large 12MP+ images).
+
+2.  **Fixed Gemini Reliability:**
+    -   Restored the robust prompt instruction: `IMPORTANT: Return the result ONLY as a JSON object...`.
+    -   Improved response parsing in `KontextTool` to handle potential string/object mismatches or markdown wrapping from Gemini.
+
+3.  **Restored Google Photos Auto-Save:**
+    -   Added `uploadToGooglePhotos` call in the success block of `generateImage` in `KontextTool`.
+    -   This ensures that every successfully generated image is backed up to the user's Google Photos album, if connected.
+
+Verification:
+-   Linter check passed.
+-   Logic review confirms the data flow: Resize -> API -> Parse -> Display -> Upload.
+

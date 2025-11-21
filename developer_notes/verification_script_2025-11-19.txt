@@ -1,0 +1,26 @@
+Verification Report - Environment & Connectivity
+Date: 2025-11-19
+
+Description:
+Created a verification script `scripts/verify_setup.ts` to check the health of the project configuration and external integrations.
+
+Capabilities:
+- **Environment Variable Check:** Validates presence of required keys.
+- **Replicate API Check:** Attempts to connect to Replicate API using the provided token.
+- **Gemini API Check:** Attempts to list models from Gemini API using the provided key.
+- **Google Config Check:** Verifies presence of OAuth credentials.
+- **File Integrity Check:** Ensures critical source files exist.
+
+Usage:
+Run `npm run test:verify` in the terminal.
+
+Files Created:
+- scripts/verify_setup.ts
+
+Files Modified:
+- package.json (Added `test:verify` script and dev dependencies)
+- server_setup_info.txt (Updated with testing info)
+
+Status:
+Ready for user to execute to confirm their environment is correctly set up.
+

@@ -1,0 +1,24 @@
+Fixing Z-Index for Prompt History and Deployment Notes
+======================================================
+
+Date: 2025-11-20
+Author: Assistant
+Reason: User reported Prompt History popup was blocked by other elements, and cost tally wasn't visible yet.
+
+Changes:
+1.  **Z-Index Fix**:
+    - Updated `src/components/PromptHistory.tsx` to increase z-index from `50` to `100`.
+    - This ensures the history dropdown appears above the model selector and other UI elements.
+
+2.  **Cost Tally Visibility**:
+    - The cost tally requires data to be present in Firestore.
+    - It updates on a 30-second poll cycle.
+    - If it's still not appearing, it likely means:
+        a) No costs have been recorded yet (try generating an image).
+        b) The permissions change hasn't propagated or wasn't applied correctly.
+    - I advised the user to generate an image to trigger the first write.
+
+Deployment:
+- Ran `npm run build` to verify.
+- User needs to redeploy using `./redeploy_cloud_run.sh`.
+

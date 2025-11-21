@@ -1,0 +1,69 @@
+Google Photos Quota / Upload Fix - November 19, 2025
+====================================================
+
+Issue
+=====
+- The app reported: "Done! (GPhotos upload failed)" even when the header showed "Connected".
+- Cloud Run logs showed Google Photos API error:
+  - HTTP 429 RESOURCE_EXHAUSTED
+  - Message: "Quota exceeded for quota 'concurrent write request' of service 'photoslibrary.googleapis.com' for consumer 'project:310306714158'."
+- Root cause: Each tool (`KontextTool`, `UpscaleTool`, `CropMaskTool`, `VideoTool`) was performing its *own* upload to Google Photos **in addition** to the centralized upload in `SessionContext`. This created multiple near-simultaneous write requests per edit, quickly hitting the Photos API's concurrent write quota.
+
+Changes
+=======
+1. **Centralized uploads in `SessionContext`**
+   - File: `src/context/SessionContext.tsx`
+   - Logic:
+     - `updateSessionImage` now always attempts a single `uploadToGooglePhotos(file)` call after updating the session image.
+     - On failure:
+       - If error message is `"Google Photos not connected"`, it is ignored (user not connected).
+       - Any other errors are logged via `console.error("Failed to upload to Google Photos:", err)`.
+
+2. **Removed per-tool auto-upload paths**
+   - Files:
+     - `src/components/tools/KontextTool.tsx`
+     - `src/components/tools/UpscaleTool.tsx`
+     - `src/components/tools/CropMaskTool.tsx`
+     - `src/components/tools/VideoTool.tsx`
+   - Changes:
+     - Removed `autoUploadToGoogle` localStorage checks.
+     - Removed direct calls to `uploadToGooglePhotos` inside each tool.
+     - Tools now *only* update the session image (`onUpdateImage`) and rely on `SessionContext` to handle uploads.
+     - Removed all `"Done! (GPhotos upload failed)"` status texts; tools now just report `"Done!"` and defer upload status to centralized logging.
+
+3. **Simplified Header behavior**
+   - File: `src/components/Header.tsx`
+   - Behavior:
+     - Checkbox removed; UI now shows either:
+       - "Connect Google Photos" button when not connected, or
+       - "✓ Auto-uploading to Google Photos" when connected.
+     - When the app detects `connected: true` from `/api/auth/google/status` or the `google_connected=true` query param, it sets a local `autoUploadToGoogle` flag to `true` for compatibility, but tools no longer read it.
+
+Reason / Root Cause
+===================
+- The Google Photos API enforces strict quotas on **concurrent write requests**.
+- With both per-tool uploads and `SessionContext` uploads, each edit could trigger 2+ write operations in very quick succession.
+- This pushed the project over the "concurrent write request" quota (`RESOURCE_EXHAUSTED`), generating the observed failures.
+
+Effects / Current Behavior
+==========================
+- For a connected account:
+  - Edits and generations automatically upload to Google Photos once per final image.
+  - Quota-related 429s are much less likely since we only perform a single media creation per operation.
+- For a non-connected account:
+  - `SessionContext` attempts an upload, receives `"Google Photos not connected"`, and ignores it without surfacing a noisy error to the user.
+
+How to Verify
+=============
+1. Connect Google Photos via the header "Connect Google Photos" button.
+2. Confirm header shows "✓ Auto-uploading to Google Photos".
+3. Generate or edit an image.
+4. Check:
+   - Cloud Run logs: only **one** POST to `/api/google-photos/upload` per operation.
+   - Google Photos "flux dev" album receives the new media item (subject to Google API quotas).
+
+Notes
+=====
+- If the 429 quota error appears again, it is purely a Google-side rate/quota limit (e.g., too many writes in a very short window or project-wide limits). The app now minimizes concurrent writes from its side.
+
+

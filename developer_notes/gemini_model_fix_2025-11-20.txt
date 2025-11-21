@@ -1,0 +1,22 @@
+Gemini Model Update and Fix (2025-11-20)
+
+Description:
+Updated the Gemini integration to enforce usage of `gemini-2.5-flash-image` (Nano Banana) and added safeguards against model downgrades.
+
+Changes:
+1.  Updated `src/app/api/gemini/generate/route.ts`:
+    -   Changed default model from `gemini-1.5-flash` to `gemini-2.5-flash-image`.
+    -   Added logging for Gemini responses that are missing expected image data (to debug "No image in Gemini response" errors).
+2.  Updated `src/components/tools/KontextTool.tsx`:
+    -   Added `useEffect` hook to validate the `last_model` stored in local storage.
+    -   If the stored model is invalid (e.g. if it was previously set to a 2.0 model that is no longer in the list), it resets to `gemini-2.5-flash-image`.
+
+Reason:
+-   User reported the app was switching to Gemini 2.0 unexpectedly.
+-   User reported "No image in Gemini response" errors.
+-   Ensuring the correct model ID is used and adding logging to identify response structure issues.
+
+Validation:
+-   Verified model ID `gemini-2.5-flash-image` is consistent with frontend configuration.
+-   Added logic to correct client-side state if it drifts.
+

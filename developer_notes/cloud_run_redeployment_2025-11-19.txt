@@ -1,0 +1,51 @@
+Cloud Run Redeployment - November 19, 2025
+
+Deployment Summary:
+- Status: ✅ Successful
+- Service Name: flux-dev-web
+- Project ID: golden-bonbon-327902
+- Region: us-central1
+- Deployment Method: Automated script (redeploy_cloud_run.sh)
+
+Build Details:
+- Docker Image: gcr.io/golden-bonbon-327902/flux-dev-web:latest
+- Build ID: c51ba771-3193-4f55-b084-5a1336db9742
+- Build Duration: 2 minutes 1 second
+- Build Status: SUCCESS
+
+Deployment Revisions:
+- Revision 1: flux-dev-web-00023-6pj (initial deployment)
+- Revision 2: flux-dev-web-00024-n2p (after NEXT_PUBLIC_APP_URL update)
+
+Service URLs:
+- Primary URL: https://flux-dev-web-310306714158.us-central1.run.app
+- Alternative URL: https://flux-dev-web-bnnjrtatyq-uc.a.run.app
+
+Configuration:
+- Memory: 2Gi
+- CPU: 2
+- Min Instances: 0
+- Max Instances: 10
+- Port: 3000
+- Authentication: Unauthenticated access enabled
+
+Environment Variables:
+- Source: .env file (secrets not configured in Secret Manager)
+- Variables deployed:
+  * REPLICATE_API_TOKEN
+  * GEMINI_API_KEY
+  * GOOGLE_CLIENT_ID
+  * GOOGLE_CLIENT_SECRET
+  * NEXT_PUBLIC_APP_URL (updated post-deployment)
+
+Notes:
+- Build completed successfully with no errors
+- Next.js build generated 11 routes (2 static, 9 dynamic)
+- All environment variables loaded from .env file
+- NEXT_PUBLIC_APP_URL was automatically updated after deployment
+
+Next Steps:
+- Verify service is accessible at the deployed URL
+- Test API endpoints and authentication flows
+- Consider migrating to Secret Manager for production security
+

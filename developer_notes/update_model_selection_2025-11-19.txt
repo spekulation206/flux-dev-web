@@ -1,0 +1,38 @@
+Update Report - Model Selection
+Date: 2025-11-19
+
+Description:
+Added model selection capabilities to all tools, allowing users to choose between different AI models for image and video generation.
+
+Changes:
+- Created `ModelSelector` component for consistent UI.
+- Updated `VideoTool` to support:
+  - Wan 2.2 I2V Fast
+  - Wan 2.2 5B Fast
+  - Seedance Pro Fast (2s & 5s)
+  - Hailuo 1.5
+- Updated `KontextTool` to support:
+  - Flux Kontext Dev/Pro/Max
+  - Qwen Image Edit
+  - Seedream 4
+  - NanoBanana (Gemini 2.5 Flash)
+- Updated `CropMaskTool` (Flux Fill) to support:
+  - Flux Fill Dev
+  - Flux Fill Pro
+- Updated `UpscaleTool` to support:
+  - Topaz Upscale (2x/4x)
+  - Creative Upscale (Stable Diffusion x4)
+
+Files Modified:
+- src/components/ModelSelector.tsx (New)
+- src/components/tools/VideoTool.tsx
+- src/components/tools/KontextTool.tsx
+- src/components/tools/CropMaskTool.tsx
+- src/components/tools/UpscaleTool.tsx
+- src/lib/api.ts (Added generateGemini)
+
+Verification:
+- Model selectors appear in each tool.
+- API calls include the correct model IDs/parameters.
+- Gemini integration handles base64 image data correctly.
+

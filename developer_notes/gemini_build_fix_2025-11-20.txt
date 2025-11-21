@@ -1,0 +1,18 @@
+Gemini Build Fix (2025-11-20)
+
+Description:
+Fixed a TypeScript scope error in `KontextTool.tsx` that was causing the build to fail.
+
+Changes:
+1.  `src/components/tools/KontextTool.tsx`:
+    -   Moved the declaration of `let responseText = "";` up to the same scope as `imageB64`.
+    -   This ensures `responseText` is accessible in the `else` block where the error is thrown.
+
+Reason:
+-   Previous edit introduced a variable scoping issue (`responseText` was defined inside an `if` block but used outside it).
+-   This caused the production build to fail with `Cannot find name 'responseText'`.
+
+Validation:
+-   Ran `read_lints` to confirm the file is now syntactically correct.
+-   This unblocks the deployment process.
+

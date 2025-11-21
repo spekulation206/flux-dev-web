@@ -1,0 +1,45 @@
+Port Report - Pythonista to Web App
+Date: 2025-11-19
+
+Description:
+Ported the Pythonista image processing script to a Next.js web application.
+
+Changes:
+- Replaced Pythonista `ui` module with React components.
+- Replaced `photos` module with HTML5 File API.
+- Replaced `requests` calls with Next.js API routes to proxy requests to Replicate and Gemini.
+- Implemented UI Design Rules (Black/Cream theme, geometric layout).
+- Added Dark Mode toggle.
+- Implemented tools: Crop & Mask, Kontext, Upscale, Video.
+
+Files Created:
+- src/app/page.tsx
+- src/app/layout.tsx
+- src/app/globals.css
+- src/components/MainApp.tsx
+- src/components/Editor.tsx
+- src/components/ImageUploader.tsx
+- src/components/Header.tsx
+- src/components/ThemeProvider.tsx
+- src/components/tools/CropMaskTool.tsx
+- src/components/tools/KontextTool.tsx
+- src/components/tools/UpscaleTool.tsx
+- src/components/tools/VideoTool.tsx
+- src/lib/api.ts
+- src/lib/utils.ts
+- src/app/api/replicate/prediction/route.ts
+- src/app/api/replicate/prediction/[id]/route.ts
+- src/app/api/replicate/upload/route.ts
+- src/app/api/gemini/segmentation/route.ts
+
+Verification:
+- Code structure follows Next.js App Router conventions.
+- API routes handle authentication securely (server-side).
+- UI components use Tailwind CSS for styling.
+- State management handles image flow between tools.
+
+Pending:
+- Full end-to-end testing with valid API keys.
+- Refinement of canvas masking (brush size, undo/redo).
+- Gallery implementation (currently just updates the view).
+

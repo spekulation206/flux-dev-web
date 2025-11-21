@@ -1,0 +1,53 @@
+Safari Redirect Port Error Fix - November 19, 2025
+===================================================
+
+ISSUE
+=====
+Safari error: "Not allowed to use restricted network port" when completing OAuth flow.
+
+Root Cause:
+- Next.js redirect was using `new URL("/path", request.url)` which constructs URLs
+  relative to the request URL
+- Safari's security restrictions can misinterpret this and block redirects to
+  certain ports (like localhost ports)
+- Even though we're redirecting to Cloud Run, Safari was blocking the redirect
+
+SOLUTION APPLIED
+================
+Updated callback route to use explicit absolute URLs from NEXT_PUBLIC_APP_URL
+instead of constructing URLs from request.url.
+
+Changes:
+1. Added baseUrl variable at start of callback handler
+2. Changed all redirects to use explicit absolute URLs:
+   - `${baseUrl}/?error=auth_failed`
+   - `${baseUrl}/?google_connected=true`
+   - etc.
+
+This ensures Safari receives proper absolute URLs and doesn't block the redirect.
+
+CODE CHANGES
+============
+File: src/app/api/auth/google/callback/route.ts
+
+Before:
+  return NextResponse.redirect(new URL("/?google_connected=true", request.url));
+
+After:
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+  return NextResponse.redirect(`${baseUrl}/?google_connected=true`);
+
+DEPLOYMENT
+==========
+- Revision: flux-dev-web-00003-jl4
+- Deployed: November 19, 2025
+- Status: Active
+
+TESTING
+=======
+After deployment, test OAuth flow in Safari:
+1. Navigate to Cloud Run URL
+2. Click Google sign-in
+3. Complete OAuth consent
+4. Should redirect back to app without Safari port error
+

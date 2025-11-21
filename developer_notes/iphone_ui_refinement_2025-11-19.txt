@@ -1,0 +1,33 @@
+iPhone UI Refinement & Multitasking Update - 2025-11-19
+
+Changes:
+1. Architecture:
+   - Created `SessionContext` to manage multiple editing sessions simultaneously.
+   - Refactored `MainApp` to switch between a `Gallery` view (all sessions) and an `Editor` view (active session).
+   - Lifted state from `Editor` to `SessionContext` to preserve progress when switching views.
+
+2. Mobile UX:
+   - Implemented a "Mobile-First" layout for the Editor.
+   - Moved tool tabs to a fixed bottom navigation bar on mobile devices (`md:hidden`).
+   - Added "Back to Gallery" navigation to allow users to queue up jobs and switch images.
+
+3. Background Processing & Notifications:
+   - Created `NotificationManager` to display toast notifications when background jobs (upscaling, edits) complete.
+   - Updated `UpscaleTool` and `KontextTool` to report granular status ("Processing", "Uploading", etc.) via `onProcessing` callback.
+   - Gallery cards now show live status indicators (spinner for processing, checkmark for done).
+
+4. Styling:
+   - Enforced "Black and Cream" color palette in `globals.css` and component styles.
+   - Used `lucide-react` icons for clean, minimal UI.
+
+Files Modified:
+- src/context/SessionContext.tsx (New)
+- src/components/Gallery.tsx (New)
+- src/components/NotificationManager.tsx (New)
+- src/components/MainApp.tsx
+- src/components/Editor.tsx
+- src/components/tools/UpscaleTool.tsx
+- src/components/tools/KontextTool.tsx
+- src/app/layout.tsx
+- src/app/globals.css
+

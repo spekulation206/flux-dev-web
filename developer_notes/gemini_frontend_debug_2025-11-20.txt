@@ -1,0 +1,20 @@
+Gemini Frontend Debugging Update (2025-11-20)
+
+Description:
+Added console logging to the frontend `KontextTool` component to expose the raw JSON structure returned by the backend.
+
+Changes:
+1.  `src/components/tools/KontextTool.tsx`:
+    -   Added `console.log("Gemini Response Structure:", ...)` before parsing the image.
+    -   This allows developers (and the user, via browser console) to see exactly what the browser is receiving from the API.
+
+Reason:
+-   Backend logs indicate success (3MB responses), but frontend still reports "No image".
+-   This suggests the frontend might be misinterpreting the response structure or receiving a cached/different version.
+-   Client-side logs will bridge the gap between "Backend sent X" and "Frontend processed Y".
+
+Validation:
+-   User can inspect the browser console to see the full JSON object.
+-   If the JSON contains `inline_data`, then the issue is in the `imageB64` extraction logic.
+-   If the JSON does *not* contain `inline_data` (but backend logs said it did), then there is a network/proxy issue stripping the data.
+

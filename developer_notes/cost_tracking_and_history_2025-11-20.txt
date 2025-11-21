@@ -1,0 +1,38 @@
+Cost Tracking and Prompt History Implementation
+=================================================
+
+Date: 2025-11-20
+Author: Assistant
+Reason: User request for prompt history persistence and real-time cost tracking.
+
+Changes:
+1.  **Firestore Integration**:
+    - Added `firebase-admin` dependency.
+    - Created `src/lib/firestore.ts` for initialization.
+    - Cloud Run uses default service account credentials.
+
+2.  **Cost Tracking**:
+    - Created `src/lib/pricing.ts` with Gemini and Replicate (Flux) pricing models.
+    - Created `src/lib/billing.ts` to track costs in Firestore.
+    - Implemented deduplication logic using prediction/generation IDs.
+    - Updated `src/app/api/gemini/generate` and `src/app/api/replicate/prediction/[id]` to record costs on success.
+    - Added `src/app/api/costs` endpoint.
+    - Added `CostDisplay` component to Header (Top-Left).
+
+3.  **Prompt History**:
+    - Created `src/lib/history.ts` to manage prompt history in Firestore (max 200 items per section).
+    - Added `src/app/api/history` endpoint.
+    - Created `PromptHistory` component.
+    - Integrated into `PromptInput` with `section` prop.
+    - Updated `KontextTool`, `VideoTool`, `CropMaskTool` to use `section` prop.
+
+4.  **Documentation**:
+    - Updated `redeploy_cloud_run.sh` with permission notes.
+    - Updated `server_setup_info.txt`.
+
+Testing:
+- Functionality relies on Firestore connectivity.
+- Local testing requires `GOOGLE_APPLICATION_CREDENTIALS` or mock.
+- Cost tracking updates real-time (polled every 30s).
+- History saves on prompt submission.
+

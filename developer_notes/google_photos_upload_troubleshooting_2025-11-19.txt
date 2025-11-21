@@ -1,0 +1,37 @@
+Google Photos Upload Failure Troubleshooting
+============================================
+Date: 2025-11-19
+
+Issue:
+The app reports "Connected" to Google Photos (via cookies), but uploads fail with a generic error or silently.
+
+Root Cause:
+The "Connected" status in the UI only checks for the existence of the `google_refresh_token` cookie. However, to actually upload images, the server needs to refresh the access token using `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+If these environment variables are missing in the Cloud Run environment (e.g., not added to `.env` or Secret Manager before deployment), the token refresh fails. Previously, this resulted in a 401 error that the client interpreted as "Not Connected" (which the UI swallowed to avoid noise).
+
+Fixes Implemented:
+1.  **Enhanced Error Handling**: 
+    - `src/app/api/google-photos/upload/route.ts` now explicitly checks for missing `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` during token refresh.
+    - If missing, it throws a clear "Server configuration error: Missing Google credentials" (500), which will now be logged in the client console and not swallowed.
+    
+2.  **New Diagnostic Endpoint**:
+    - `GET /api/auth/google/status` now returns a `configured` flag and debug info.
+    - You can visit `https://[YOUR-CLOUD-RUN-URL]/api/auth/google/status` to see if `envClientId` and `envClientSecret` are true.
+
+3.  **Deployment Script Update**:
+    - `redeploy_cloud_run.sh` now checks if `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set in your `.env` file before deploying.
+    - It warns you if they are missing.
+
+Action Required:
+1.  Ensure your local `.env` file contains:
+    ```
+    GOOGLE_CLIENT_ID=your_client_id
+    GOOGLE_CLIENT_SECRET=your_client_secret
+    ```
+2.  Run `./redeploy_cloud_run.sh` to redeploy the application with these variables.
+3.  Verify by visiting `/api/auth/google/status` on your deployed app.
+
+Note:
+If using Google Secret Manager, ensure the secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` exist and are accessible to the Cloud Run service account.
+

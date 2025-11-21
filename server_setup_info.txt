@@ -1,0 +1,39 @@
+Flux Web App Server Setup Info
+============================
+
+Date Updated: 2025-11-20
+Framework: Next.js 15 (App Router)
+Runtime: Node.js 20+ (Dockerized)
+Port: 3000 (Internal), Exposed via Cloud Run
+
+Key Dependencies:
+- next
+- react
+- react-dom
+- firebase-admin (Firestore for persistence)
+- tailwindcss
+- lucide-react
+
+Infrastructure:
+- Deployment: Google Cloud Run
+- Build: Google Cloud Build
+- Database: Google Cloud Firestore (Native Mode)
+- Secrets: Google Secret Manager
+- Authentication: Google OAuth 2.0
+
+Environment Variables (Required):
+- REPLICATE_API_TOKEN: For image/video generation
+- GEMINI_API_KEY: For prompt enhancement/generation
+- GOOGLE_CLIENT_ID: For Google Login
+- GOOGLE_CLIENT_SECRET: For Google Login
+- NEXT_PUBLIC_APP_URL: URL of the deployed app (for redirects)
+
+Permissions:
+- Cloud Run Service Account must have:
+  - Cloud Datastore User (for Firestore)
+  - Secret Manager Secret Accessor
+  - Storage Object Viewer (if using GCS)
+
+Startup Command:
+- Local: npm run dev
+- Production: npm start (after npm run build)

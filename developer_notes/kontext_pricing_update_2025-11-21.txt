@@ -1,0 +1,45 @@
+Update: Updated pricing structure to use per-image pricing for Kontext models
+
+Date: 2025-11-21
+
+Changes Made:
+1. Updated `src/lib/pricing.ts` to include per-image pricing for all Kontext models:
+   - Nano Banana Pro (gemini-3-pro-image-preview): $0.139 for 1080p/1K/2K, $0.24 for 4K
+   - Nano Banana (gemini-2.5-flash-image): $0.039 per image
+   - Flux Kontext Dev: $0.00025 per image (0.025 cents)
+   - Flux Kontext Pro: $0.0004 per image (0.04 cents)
+   - Flux Kontext Max: $0.0008 per image (0.08 cents)
+   - Qwen Image Edit: $0.03 per image
+   - Seedream 4: $0.03 per image
+
+2. Updated `calculateReplicateCost()` function:
+   - Added `isPerImage` parameter to support per-image pricing
+   - Checks for `pricePerImage` property when `isPerImage` is true
+   - Falls back to time-based pricing for legacy models
+
+3. Updated `calculateGeminiCost()` function:
+   - Added `resolution` parameter for Nano Banana Pro resolution-based pricing
+   - Handles per-image pricing for Nano Banana and Nano Banana Pro
+   - Falls back to token-based pricing for legacy models
+
+4. Updated `src/app/api/gemini/generate/route.ts`:
+   - Uses per-image pricing for image models (Nano Banana, Nano Banana Pro)
+   - Passes resolution to `calculateGeminiCost()` for Nano Banana Pro
+   - Falls back to token-based pricing for legacy models if usageMetadata is available
+
+5. Updated `src/app/api/replicate/prediction/[id]/route.ts`:
+   - Detects Kontext models (flux-kontext, qwen-image-edit, seedream-4)
+   - Uses per-image pricing for Kontext models
+   - Falls back to time-based pricing for legacy models
+
+Technical Details:
+- Pricing is now per-image for all Kontext models instead of time-based or token-based
+- Nano Banana Pro supports resolution-based pricing (1080p/1K/2K vs 4K)
+- Legacy models (non-Kontext) continue to use their original pricing models
+- Cost recording includes metadata about pricing type for audit purposes
+
+Files Modified:
+- src/lib/pricing.ts
+- src/app/api/gemini/generate/route.ts
+- src/app/api/replicate/prediction/[id]/route.ts
+

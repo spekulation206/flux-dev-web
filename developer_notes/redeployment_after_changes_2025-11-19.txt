@@ -1,0 +1,21 @@
+Cloud Run Redeployment (User Requested) - November 19, 2025
+
+Event: User requested redeployment after making changes.
+Method: Automated script (redeploy_cloud_run.sh)
+
+Deployment Details:
+- Build ID: a0b89b2b-e6ce-4622-b2d8-a1e30a8c0c62
+- Build Duration: 2 minutes 10 seconds
+- Build Status: SUCCESS
+
+Revisions:
+- Revision 28: flux-dev-web-00028-cc4 (initial code deploy)
+- Revision 29: flux-dev-web-00029-l4n (updated NEXT_PUBLIC_APP_URL secret version)
+
+Environment:
+- Secrets Used: Yes (Secret Manager)
+- NEXT_PUBLIC_APP_URL Secret Version: Updated to Version 3
+
+Status: ✅ Successful
+Service URL: https://flux-dev-web-bnnjrtatyq-uc.a.run.app
+

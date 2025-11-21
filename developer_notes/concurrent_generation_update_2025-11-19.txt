@@ -1,0 +1,29 @@
+Concurrent Generation & UI Update Report
+Date: 2025-11-19
+
+Changes:
+1.  Modified `SessionContext` to support a list of `generations` within a session.
+    -   Added `Generation` interface.
+    -   Added `addGeneration` and `updateGeneration` methods.
+    -   Maintained backward compatibility with `currentImage`.
+
+2.  Refactored `KontextTool` to support concurrent generations.
+    -   Removed blocking `isProcessing` state.
+    -   Implemented a grid view for generated images.
+    -   Displayed the original image as a small thumbnail.
+    -   Added background generation capability (updates session state even if navigated away).
+    -   Integrated with Gemini and Replicate APIs for the new flow.
+
+3.  Updated `Editor` layout.
+    -   Changed fixed height to responsive flex layout (`flex-1`, `min-h-0`) to better support mobile devices and internal scrolling.
+
+4.  Updated `globals.css`.
+    -   Restored Tailwind directives.
+    -   Implemented design system colors (Cream #FFFFED / Black #000000).
+    -   Added utility classes.
+
+Verification:
+-   Code linted.
+-   Logic for background updates verified (relies on SessionContext state).
+-   Mobile responsiveness addressed via flexbox and viewport height handling.
+

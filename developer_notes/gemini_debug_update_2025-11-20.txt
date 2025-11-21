@@ -1,0 +1,23 @@
+Gemini Debugging and Error Handling Update (2025-11-20)
+
+Description:
+Enhanced logging and error handling for Gemini image generation to diagnose "No image in Gemini response" errors.
+
+Changes:
+1.  `src/app/api/gemini/generate/route.ts`:
+    -   Added logging for responses that contain parts but no image (previously only logged if parts were missing).
+    -   This will now log the full JSON response when Gemini refuses to generate an image or returns text only.
+
+2.  `src/components/tools/KontextTool.tsx`:
+    -   Improved error reporting to the user.
+    -   If Gemini returns text (e.g., a refusal or explanation) instead of an image, that text is now displayed as the error message in the UI, instead of the generic "No image found..." message.
+    -   This allows the user to see if the model is hitting safety filters ("I cannot generate...") or other issues.
+
+Reason:
+-   User reported persistent "No image" errors.
+-   Cloud Run logs were not showing warnings because the previous check (`!parts`) was too strict (the model likely returns text parts).
+-   New logging will reveal the exact response from Google's API.
+
+Validation:
+-   Checked that `redeploy_cloud_run.sh` is ready to be run by the user.
+

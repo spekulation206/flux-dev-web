@@ -1,0 +1,52 @@
+Cloud Run Deployment - November 19, 2025
+==========================================
+
+DEPLOYMENT SUMMARY
+==================
+Successfully deployed Next.js application to Google Cloud Run.
+
+Service Details:
+- Service Name: flux-dev-web
+- Project ID: golden-bonbon-327902 (Switched from ancient-flag-474315-m8)
+- Region: us-central1
+- Service URL: https://flux-dev-web-bnnjrtatyq-uc.a.run.app
+- Revision: flux-dev-web-00002-wx2
+
+Configuration:
+- Memory: 2Gi
+- CPU: 2
+- Port: 3000
+- Min Instances: 0
+- Max Instances: 10
+- Authentication: Public (allow-unauthenticated)
+
+FILES CREATED/UPDATED
+=====================
+1. Dockerfile - Multi-stage build for Next.js standalone output
+2. .dockerignore - Excludes unnecessary files from Docker build
+3. redeploy_cloud_run.sh - Automated redeployment script
+4. Updated next.config.ts - Added standalone output mode
+
+ENVIRONMENT VARIABLES
+=====================
+Currently using environment variables from .env file:
+- REPLICATE_API_TOKEN
+- GEMINI_API_KEY
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+- NEXT_PUBLIC_APP_URL (Updated automatically after deployment)
+
+IMPORTANT NEXT STEP: OAUTH CONFIGURATION
+========================================
+You must update your Google OAuth Client in project golden-bonbon-327902:
+
+1. Go to: https://console.cloud.google.com/apis/credentials?project=golden-bonbon-327902
+2. Find the OAuth 2.0 Client ID starting with: 310306714158-...
+3. Add Authorized Redirect URI:
+   https://flux-dev-web-bnnjrtatyq-uc.a.run.app/api/auth/google/callback
+
+TROUBLESHOOTING HISTORY
+=======================
+- Fixed Safari "restricted network port" error by using absolute redirect URLs.
+- Fixed project mismatch (app was in ancient-flag, OAuth in golden-bonbon).
+- Fixed NEXT_PUBLIC_APP_URL reset issue by updating it post-deployment.

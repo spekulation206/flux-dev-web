@@ -1,0 +1,34 @@
+Update Report - Google Photos Integration
+Date: 2025-11-19
+
+Description:
+Implemented Google Photos integration to automatically upload generated images and videos to an album named "flux dev".
+
+Changes:
+- Implemented Google OAuth 2.0 flow (server-side) to obtain `photoslibrary.appendonly` scope.
+- Created API routes for authentication (`/api/auth/google/signin`, `/api/auth/google/callback`).
+- Created API route for uploading (`/api/google-photos/upload`) which handles:
+  - Token refreshing (using HTTP-only cookies).
+  - Finding or creating the "flux dev" album.
+  - Uploading raw bytes.
+  - Creating media items in the album.
+- Added "Connect" button and "Auto-upload" toggle to the Header.
+- Integrated auto-upload logic into all tools (`CropMaskTool`, `KontextTool`, `UpscaleTool`, `VideoTool`).
+
+Files Modified:
+- src/app/api/auth/google/signin/route.ts (New)
+- src/app/api/auth/google/callback/route.ts (New)
+- src/app/api/google-photos/upload/route.ts (New)
+- src/lib/googlePhotos.ts (New)
+- src/components/Header.tsx
+- src/components/tools/CropMaskTool.tsx
+- src/components/tools/KontextTool.tsx
+- src/components/tools/UpscaleTool.tsx
+- src/components/tools/VideoTool.tsx
+- server_setup_info.txt (Added Google env vars)
+
+Verification:
+- OAuth flow redirects to Google and sets cookies.
+- Upload endpoint correctly handles the complex upload flow (bytes -> token -> media item).
+- Tools check the `autoUploadToGoogle` local storage setting before triggering upload.
+

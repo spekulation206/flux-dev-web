@@ -1,0 +1,23 @@
+Gemini Robust Parsing Update (2025-11-20)
+
+Description:
+Updated Gemini response parsing to handle both snake_case (`inline_data`) and camelCase (`inlineData`) formats.
+
+Changes:
+1.  `src/app/api/gemini/generate/route.ts`:
+    -   Updated success logging to check for `p.inlineData` as well as `p.inline_data`.
+    -   This ensures the backend logs "Success" regardless of which case convention the API uses.
+
+2.  `src/components/tools/KontextTool.tsx`:
+    -   Updated the image extraction loop to check for both `inline_data` and `inlineData`.
+    -   This ensures the frontend can find the image even if the API (or a client library update) changes the casing.
+
+Reason:
+-   User reported persistent "No image" errors.
+-   Google APIs sometimes vary between snake_case (REST) and camelCase (SDKs).
+-   The frontend was strictly checking for `inline_data`, which might be failing if the response format is slightly different than expected.
+
+Validation:
+-   Code now explicitly checks both properties.
+-   This covers the most likely reason for the "backend sees it, frontend misses it" discrepancy (other than network stripping).
+

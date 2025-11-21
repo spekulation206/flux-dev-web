@@ -1,0 +1,45 @@
+Environment Variable Reset Issue - November 19, 2025
+=====================================================
+
+PROBLEM IDENTIFIED
+==================
+NEXT_PUBLIC_APP_URL was reset to http://localhost:3000 after redeployment.
+
+Root Cause:
+- The redeploy script loads environment variables from .env file
+- The .env file still contains http://localhost:3000
+- When redeploying, it overwrites the Cloud Run environment variable
+
+ISSUE DETAILS
+=============
+- Cloud Run had: http://localhost:3000 (wrong)
+- Should be: https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+- This caused redirect_uri_mismatch because Google OAuth was receiving:
+  http://localhost:3000/api/auth/google/callback
+  Instead of:
+  https://flux-dev-web-zzknsi2iyq-uc.a.run.app/api/auth/google/callback
+
+SOLUTION APPLIED
+=================
+1. Updated Cloud Run environment variable directly:
+   gcloud run services update flux-dev-web \
+     --region us-central1 \
+     --update-env-vars NEXT_PUBLIC_APP_URL=https://flux-dev-web-zzknsi2iyq-uc.a.run.app
+
+2. Updated .env file to prevent future resets:
+   Changed NEXT_PUBLIC_APP_URL to Cloud Run URL
+
+PREVENTION
+==========
+To prevent this in the future:
+1. Update .env file with Cloud Run URL for production deployments
+2. Or use Secret Manager instead of .env file for production
+3. Or modify redeploy script to preserve Cloud Run URL
+
+RECOMMENDATION
+==============
+For production, use Secret Manager:
+1. Create secret: NEXT_PUBLIC_APP_URL with Cloud Run URL
+2. Update redeploy script to use --set-secrets instead of --set-env-vars
+3. This prevents accidental overwrites from .env file
+

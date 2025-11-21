@@ -1,0 +1,20 @@
+Gemini Deep Debugging Update (2025-11-20)
+
+Description:
+Added detailed success/failure logging to the Gemini API route to definitively track image generation status.
+
+Changes:
+1.  `src/app/api/gemini/generate/route.ts`:
+    -   Added explicit logging for successful image generation, including MIME type and data size.
+    -   Added specific warning for "Image missing data" (mime type present but data empty).
+    -   Retained "No Image" warning for missing parts/mimetype.
+
+Reason:
+-   Cloud Run logs show successful 3MB responses, but user reports "No image" error.
+-   This discrepancy suggests either a client-side issue or a subtle backend issue (e.g. mime type exists but data is empty).
+-   The new logs will confirm exactly what the backend sees: `Gemini Success: Generated image (image/png, size: 123456 chars)` or an error.
+
+Validation:
+-   If logs show "Success", the issue is definitely in the frontend/network.
+-   If logs show "Image missing data", the issue is in the Gemini API response structure.
+

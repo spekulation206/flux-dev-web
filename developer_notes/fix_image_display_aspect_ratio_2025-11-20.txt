@@ -1,0 +1,17 @@
+Fixing Image Aspect Ratio Display
+=================================
+
+Date: 2025-11-20
+Author: Assistant
+Reason: User reported that generated images were being cut off in the UI because they were set to `object-cover`.
+
+Changes:
+1.  **KontextTool.tsx**:
+    - Changed `object-cover` to `object-contain` for the generated image display.
+    - Added `bg-black/10` to the image container to show the bounds clearly when an image has a different aspect ratio than the container.
+    - Also updated the "Original" thumbnail to use `object-contain` so the user can see the full input image.
+
+Effect:
+- Images will now scale down to fit fully within the 4:3 frame (or whatever aspect ratio the container has) without being cropped.
+- Empty space around the image will be filled with a subtle background color (`bg-black/10`).
+

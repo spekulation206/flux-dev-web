@@ -1,0 +1,17 @@
+Update: Integrated "Nano Banana Pro" (gemini-3-pro-image-preview) into KontextTool.
+
+Details:
+- Added "Nano Banana Pro" to available image models in `KontextTool.tsx`.
+- Implemented resolution options: 1K (default), 2K, 4K.
+- Resolution selection is only visible when "Nano Banana Pro" is selected.
+- Updated `generateImage` to resize input image based on target resolution (1K->1024, 2K->2048, 4K->4096).
+- Updated `src/lib/api.ts` to pass resolution parameter to backend.
+- Updated `src/app/api/gemini/generate/route.ts` to append resolution instructions to the prompt for this specific model.
+- Added pricing configuration for `gemini-3-pro-image-preview` in `src/lib/pricing.ts`.
+
+Files Affected:
+- src/components/tools/KontextTool.tsx
+- src/lib/pricing.ts
+- src/lib/api.ts
+- src/app/api/gemini/generate/route.ts
+

@@ -1,0 +1,20 @@
+Gemini 2.5 (Nano Banana) Integration Report
+Date: 2025-11-20
+
+Changes:
+1.  **Updated Model Reference:**
+    -   Replaced `gemini-2.0-flash-exp` with `gemini-2.5-flash-image`.
+    -   Updated label to "Gemini 2.5 Flash (Nano Banana)" as per user request/reference.
+
+2.  **Implemented Native Image Handling:**
+    -   Updated `KontextTool` to check for native `inline_data` (media parts) in the Gemini API response.
+    -   This avoids the need for the unreliable "JSON wrapper" hack used for text-only models.
+    -   Maintained a fallback to the text/JSON parsing logic just in case the API behavior varies or the model falls back to text description.
+
+3.  **Removed Strict JSON Prompting:**
+    -   Removed the `IMPORTANT: Return ... JSON` instruction from the prompt when using the Gemini provider, allowing the model to use its native image generation capabilities freely.
+
+Verification:
+-   Updated model ID matches standard Google naming conventions for new/experimental image models.
+-   Response parsing logic covers both `inline_data` (preferred) and text-based fallbacks.
+

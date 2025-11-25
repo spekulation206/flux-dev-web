@@ -1,0 +1,13 @@
+Fixed the "Creative Upscaler" implementation in `UpscaleTool.tsx`.
+
+- Updated the API payload to match the correct schema provided by the user.
+- The schema includes `creativity` (denoising), `resemblance` (ControlNet conditioning), `hdr`, `resolution`, `prompt`, `scheduler`, etc.
+- Added UI controls for:
+  - Creativity slider (0-1)
+  - Resemblance slider (0-1)
+  - Text prompt input
+- Switched the model ID for creative upscaler to `batouresearch/magic-image-refiner` (inferred from the schema parameters like `hdr` and `resemblance`). If this model ID is incorrect, it should be updated, but the schema is now implemented correctly.
+- Kept "Clarity Upscaler" as `nightmareai/real-esrgan`.
+
+The new UI allows users to fine-tune the creative upscale process with prompts and control sliders.
+

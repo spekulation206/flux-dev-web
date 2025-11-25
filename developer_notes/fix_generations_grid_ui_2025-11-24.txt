@@ -1,0 +1,18 @@
+Fixed the "hidden buttons" issue for generated images and improved the Upscale tool UI.
+
+1.  **Created `GenerationsGrid` Component**:
+    -   Refactored the generations grid from `KontextTool` into a reusable `GenerationsGrid` component.
+    -   Changed the overlay design: Instead of a hover-only full-image overlay (which was problematic on mobile), the action buttons ("Use" and "Download") are now placed in a persistent, semi-transparent bottom bar along with the prompt. This ensures they are always visible and accessible on touch devices.
+
+2.  **Updated `KontextTool.tsx`**:
+    -   Replaced the inline grid rendering with the new `GenerationsGrid` component.
+
+3.  **Updated `UpscaleTool.tsx`**:
+    -   Fixed a bug where `useSession` was called inside a callback (moved to top level).
+    -   Refactored the layout to split the view:
+        -   Top: Large preview of current image + Controls sidebar.
+        -   Bottom: `GenerationsGrid` showing the session history.
+    -   This ensures upscaled images are visible in a list below the main preview, consistent with user expectations for iteration.
+
+The UI is now more mobile-friendly and consistent across tools.
+

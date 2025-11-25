@@ -93,19 +93,25 @@ export function calculateGeminiCost(
 
   // Handle Nano Banana Pro with resolution-based pricing
   if (model === "gemini-3-pro-image-preview" || modelKey === "gemini-3-pro-image-preview") {
-    if (resolution === "4K") {
-      return pricing.pricePerImage4K as number;
-    } else if (resolution === "2K") {
-      return pricing.pricePerImage2K as number;
-    } else {
-      // Default to 1080p/1K pricing
-      return pricing.pricePerImage1080p as number;
+    // Type guard: check if pricing has resolution-based properties
+    if ("pricePerImage4K" in pricing && "pricePerImage2K" in pricing && "pricePerImage1080p" in pricing) {
+      if (resolution === "4K") {
+        return pricing.pricePerImage4K as number;
+      } else if (resolution === "2K") {
+        return pricing.pricePerImage2K as number;
+      } else {
+        // Default to 1080p/1K pricing
+        return pricing.pricePerImage1080p as number;
+      }
     }
   }
 
   // Handle Nano Banana (per-image pricing)
   if (model === "gemini-2.5-flash-image" || modelKey === "gemini-2.5-flash-image") {
-    return pricing.pricePerImage as number;
+    // Type guard: ensure this pricing entry actually has per-image pricing
+    if ("pricePerImage" in pricing) {
+      return pricing.pricePerImage as number;
+    }
   }
 
   // Fall back to token-based pricing for legacy models

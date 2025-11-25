@@ -57,7 +57,7 @@ export function PromptHistory({ section, onSelect }: PromptHistoryProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 bottom-full mb-2 w-64 max-h-60 overflow-y-auto bg-background border border-border shadow-lg rounded-sm z-[9999] text-xs">
+        <div className="absolute right-0 top-full mt-2 w-64 max-h-[60vh] overflow-y-auto bg-background border border-border rounded-sm z-[9999] text-xs">
           {loading ? (
             <div className="p-4 text-center opacity-50">Loading...</div>
           ) : prompts.length === 0 ? (

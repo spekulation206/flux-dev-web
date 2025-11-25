@@ -9,6 +9,7 @@ import { PromptInput } from "../PromptInput";
 import { useLocalStorage } from "@/lib/hooks";
 import { useSession, Generation } from "@/context/SessionContext";
 import { uploadToGooglePhotos } from "@/lib/googlePhotos";
+import { GenerationsGrid } from "../GenerationsGrid";
 
 interface KontextToolProps {
   image: File;
@@ -324,72 +325,11 @@ export function KontextTool({ image, onUpdateImage, onProcessing }: KontextToolP
 
       {/* Generations Grid */}
       <div className="flex-1 overflow-y-auto min-h-[300px]">
-        {generations.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-foreground/30 gap-2">
-            <Wand2 size={48} />
-            <p>No generations yet. Enter a prompt to start.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
-            {generations.map((gen) => (
-              <div 
-                key={gen.id} 
-                className="relative aspect-[4/3] bg-black/5 rounded-lg border border-border overflow-hidden group"
-              >
-                {gen.status === "completed" && gen.imageUrl ? (
-                  <>
-                    <img 
-                      src={gen.imageUrl} 
-                      alt={gen.prompt} 
-                      className="w-full h-full object-contain bg-black/10"
-                    />
-                    {/* Overlay Actions */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button 
-                        onClick={() => gen.file && onUpdateImage(gen.file, { prompt: gen.prompt, model: gen.model })}
-                        className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
-                        title="Use this image"
-                      >
-                        <Check size={20} />
-                      </button>
-                      {gen.imageUrl && (
-                        <a 
-                          href={gen.imageUrl} 
-                          download={`generated-${gen.id}.png`}
-                          className="p-2 bg-white text-black rounded-full hover:scale-110 transition-transform"
-                          title="Download"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Download size={20} />
-                        </a>
-                      )}
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 text-white text-xs truncate">
-                      {gen.prompt}
-                    </div>
-                  </>
-                ) : gen.status === "failed" ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-red-500 p-4 text-center gap-2">
-                    <AlertCircle size={24} />
-                    <p className="text-xs">{gen.error || "Failed"}</p>
-                    <button 
-                      onClick={() => generateImage(gen.id, gen.prompt || "", gen.model || "", false, resolution)}
-                      className="text-xs underline hover:text-red-600 mt-2"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-foreground/50 gap-2">
-                    <Loader2 size={24} className="animate-spin" />
-                    <p className="text-xs font-medium animate-pulse">Generating...</p>
-                    <p className="text-[10px] opacity-70 max-w-[80%] text-center truncate">{gen.prompt}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <GenerationsGrid 
+          generations={generations} 
+          onUpdateImage={onUpdateImage}
+          onRetry={(gen) => generateImage(gen.id, gen.prompt || "", gen.model || "", false, resolution)}
+        />
       </div>
     </div>
   );

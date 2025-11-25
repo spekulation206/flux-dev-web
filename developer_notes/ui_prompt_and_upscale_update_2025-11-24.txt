@@ -1,0 +1,43 @@
+UI updates on 2025-11-24
+
+Changes:
+- Enlarged the main prompt input by switching from a single-line input to a multi-line textarea with a minimum height of approximately five lines. This makes longer prompt editing much easier.
+- Moved the prompt history button outside of the text input box so it no longer overlaps the field and remains visually distinct.
+- Adjusted the prompt history dropdown to open below the button with a viewport-based max height so more entries are visible and the rest are scrollable instead of disappearing off the top of the screen.
+- Updated the Upscale tool so that each upscaled image is stored as a generation in the shared session context and appears in the same generations grid as Kontext outputs.
+
+Reason / root cause:
+- Long prompts were difficult to edit because the input area was constrained to a single line.
+- The history control sitting inside the input made the text field feel cramped and contributed to the dropdown being partially off-screen in the current layout.
+- Upscaled images were applied directly to the current session image but were not represented in the generations history UI, making it hard to see or reuse previous upscales.
+
+Implementation details:
+- `src/components/PromptInput.tsx`
+  - Replaced the single-line `input` with a `textarea`.
+  - Set `rows={5}` and added a `min-h-[120px]` class plus `resize-y` to ensure at least ~5 lines of visible text while still allowing manual resizing.
+  - Changed the layout wrapper from a horizontal flex row to a vertical stack (`flex flex-col gap-2`) and moved `PromptHistory` into its own row above the textarea, right-aligned so the history button sits outside the text box.
+  - Kept the existing Enter/Shift+Enter behavior: Enter submits, Shift+Enter inserts a newline, so submission flow is unchanged.
+
+- `src/components/PromptHistory.tsx`
+  - Updated the dropdown container from `bottom-full mb-2 max-h-60` to `top-full mt-2 max-h-[60vh]` so the menu opens downward under the button.
+  - Removed the upward-opening behavior that caused many history items to be clipped by surrounding containers or the top of the viewport.
+  - Kept `overflow-y-auto` so longer histories remain scrollable while now using a viewport-based max height to show more than ~4 items at a time where space allows.
+
+- `src/components/tools/UpscaleTool.tsx`
+  - Imported `useSession` and `Generation` from `@/context/SessionContext`.
+  - Inside `handleGenerate`, retrieved `activeSession`, `addGeneration`, and `updateGeneration` from the session context.
+  - When starting an upscale, ensured there is an active session and created a new `Generation` with status `processing`, a human-readable `promptLabel` ("Clarity Upscale" or "Creative Upscale"), the selected model id, and `createdAt` timestamp. This generation is added to the current session.
+  - After the Replicate upscale succeeds, created a local object URL for the upscaled file and updated the generation to `status: "completed"` with `imageUrl`, `file`, and the underlying Replicate `modelId`.
+  - Continued to call `onUpdateImage` so the upscaled image becomes the session's current image, and the Google Photos upload path via `updateSessionImage` remains unchanged.
+  - On errors, marked the corresponding generation as `failed` with the error message so failures are visible in the generations grid.
+
+Effects / behavior:
+- Prompt editing is now much more comfortable for multi-sentence prompts, with a visibly larger, multi-line field.
+- The history button no longer crowds the input and the history popover opens downward, making more past prompts visible and scrollable within the viewport instead of being cut off at the top.
+- Upscaled images now appear in the same generations grid used for Kontext outputs (via `Session.generations`), with thumbnails, captions, and actions consistent with other generated images, so users can see and reuse upscaled results alongside edit generations.
+
+Files touched:
+- `src/components/PromptInput.tsx`
+- `src/components/PromptHistory.tsx`
+- `src/components/tools/UpscaleTool.tsx`
+

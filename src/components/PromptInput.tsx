@@ -53,35 +53,35 @@ export function PromptInput({
   };
 
   return (
-    <div className={`flex gap-2 ${className}`}>
-      <div className="relative flex-1 flex">
-        <input
-          type="text"
+    <div className={`flex flex-col gap-2 ${className}`}>
+      {section && (
+        <div className="flex justify-end">
+          <PromptHistory section={section} onSelect={setValue} />
+        </div>
+      )}
+      <div className="flex gap-2">
+        <textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="input-primary flex-1"
+          className="input-primary flex-1 min-h-[120px] resize-y"
           onKeyDown={handleKeyDown}
           disabled={isProcessing}
+          rows={5}
         />
-        {section && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-            <PromptHistory section={section} onSelect={setValue} />
-          </div>
-        )}
+        <button
+          onClick={handleSubmit}
+          disabled={!value.trim() || isProcessing}
+          className="btn-primary whitespace-nowrap flex items-center gap-2 px-6 self-start"
+        >
+          {isProcessing ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            buttonIcon || <Wand2 size={16} />
+          )}
+          {buttonLabel}
+        </button>
       </div>
-      <button
-        onClick={handleSubmit}
-        disabled={!value.trim() || isProcessing}
-        className="btn-primary whitespace-nowrap flex items-center gap-2 px-6"
-      >
-        {isProcessing ? (
-          <Loader2 size={16} className="animate-spin" />
-        ) : (
-          buttonIcon || <Wand2 size={16} />
-        )}
-        {buttonLabel}
-      </button>
     </div>
   );
 }

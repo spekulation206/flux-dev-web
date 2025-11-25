@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Loader2, Zap } from "lucide-react";
+import { Loader2, Zap, Sliders, Type } from "lucide-react";
 import { uploadToReplicate, predictReplicate, pollPrediction } from "@/lib/api";
 import { ModelSelector, ModelOption } from "../ModelSelector";
+import { useSession, Generation } from "@/context/SessionContext";
+import { GenerationsGrid } from "../GenerationsGrid";
 
 interface UpscaleToolProps {
   image: File;
@@ -17,12 +19,40 @@ const UPSCALE_MODELS: ModelOption[] = [
 ];
 
 export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolProps) {
+  const { activeSession, addGeneration, updateGeneration } = useSession();
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState("");
   const [model, setModel] = useState("clarity-upscaler");
-  const [creativity, setCreativity] = useState(0.3);
+
+  // Creative Upscaler State
+  const [creativity, setCreativity] = useState(0.25);
+  const [resemblance, setResemblance] = useState(0.75);
+  const [prompt, setPrompt] = useState("");
+  const [resolution, setResolution] = useState("original");
+
+  // Get generations for the grid
+  const generations = activeSession?.generations || [];
 
   const handleGenerate = async () => {
+    if (!activeSession) {
+      alert("No active session selected");
+      return;
+    }
+
+    const generationId = crypto.randomUUID();
+    const promptLabel =
+      model === "creative-upscaler" ? "Creative Upscale" : "Clarity Upscale";
+
+    const newGeneration: Generation = {
+      id: generationId,
+      status: "processing",
+      prompt: promptLabel,
+      model,
+      createdAt: Date.now(),
+    };
+
+    addGeneration(activeSession.id, newGeneration);
+
     setIsProcessing(true);
     setStatus("Uploading image...");
     onProcessing?.(true, "Uploading image...");
@@ -43,12 +73,19 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       if (model === "clarity-upscaler") {
         modelId = "nightmareai/real-esrgan";
       } else if (model === "creative-upscaler") {
-        modelId = "stability-ai/stable-diffusion-x4-upscaler";
+        modelId = "batouresearch/magic-image-refiner"; 
         input = {
           image: imageUrl,
-          prompt: "high quality, detailed", // Basic prompt for upscaler
-          scale: 4,
-          face_enhance: true,
+          prompt: prompt || "high quality, detailed", 
+          creativity,
+          resemblance,
+          resolution,
+          steps: 20,
+          scheduler: "DDIM",
+          guidance_scale: 7,
+          hdr: 0,
+          guess_mode: false,
+          negative_prompt: "teeth, tooth, open mouth, longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, mutant",
         };
       }
 
@@ -75,7 +112,17 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
         const res = await fetch(url);
         const blob = await res.blob();
         const file = new File([blob], "upscaled.png", { type: "image/png" });
-        onUpdateImage(file, { prompt: "Upscale", model: modelId });
+        const localUrl = URL.createObjectURL(file);
+
+        updateGeneration(activeSession.id, generationId, {
+          status: "completed",
+          imageUrl: localUrl,
+          file,
+          model: modelId,
+        });
+
+        // Update the main image too
+        onUpdateImage(file, { prompt: promptLabel, model: modelId });
         setStatus("Done!");
         onProcessing?.(false, "Done!");
       } else {
@@ -86,40 +133,137 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       alert(e.message);
       setStatus("Error");
       onProcessing?.(false, "Error");
+      if (activeSession) {
+        updateGeneration(activeSession.id, generationId, {
+          status: "failed",
+          error: e.message || String(e),
+        });
+      }
     } finally {
       setIsProcessing(false);
-      onProcessing?.(false); // Ensure we reset if not already handled
+      onProcessing?.(false); 
     }
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="flex-1 flex items-center justify-center bg-black/5 rounded-md p-4 overflow-hidden">
-        <img
-          src={URL.createObjectURL(image)}
-          alt="Preview"
-          className="max-h-full max-w-full object-contain"
-        />
-      </div>
-      
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <ModelSelector 
-            models={UPSCALE_MODELS} 
-            selectedModelId={model} 
-            onSelect={setModel} 
-            className="w-64"
+    <div className="flex flex-col gap-6 h-full">
+      {/* Top Section: Preview + Controls */}
+      <div className="flex flex-col lg:flex-row gap-6 h-[60%] shrink-0 min-h-[400px]">
+        {/* Large Preview */}
+        <div className="flex-1 bg-black/5 rounded-lg flex items-center justify-center overflow-hidden border border-border/50 relative">
+          <img
+            src={URL.createObjectURL(image)}
+            alt="Preview"
+            className="max-h-full max-w-full object-contain"
           />
-          <button
-            onClick={handleGenerate}
-            disabled={isProcessing}
-            className="btn-primary flex items-center gap-2"
-          >
-            {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-            Upscale
-          </button>
+          <div className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+            Current Image
+          </div>
         </div>
-        {status && <p className="text-xs text-foreground/70">{status}</p>}
+        
+        {/* Controls Sidebar */}
+        <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto bg-background/50 p-4 rounded-lg border border-border/50">
+          <div className="space-y-4">
+             <ModelSelector 
+                models={UPSCALE_MODELS} 
+                selectedModelId={model} 
+                onSelect={setModel} 
+                className="w-full"
+              />
+              
+              <button
+                onClick={handleGenerate}
+                disabled={isProcessing}
+                className="w-full btn-primary flex items-center justify-center gap-2"
+              >
+                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
+                Upscale
+              </button>
+          </div>
+
+          {model === "creative-upscaler" && (
+            <div className="flex flex-col gap-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-2">
+                <label className="text-xs font-medium flex items-center gap-2">
+                  <Type size={12} />
+                  Prompt
+                </label>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe desired details..."
+                  className="w-full text-sm p-2 rounded-md border bg-transparent resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-medium flex items-center gap-2">
+                      <Sliders size={12} />
+                      Creativity
+                    </label>
+                    <span className="text-xs font-mono text-muted-foreground">{creativity.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={creativity}
+                    onChange={(e) => setCreativity(parseFloat(e.target.value))}
+                    className="w-full accent-primary h-1 bg-border rounded-lg appearance-none cursor-pointer"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Denoising strength (Higher = more change)
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-medium flex items-center gap-2">
+                      <Sliders size={12} />
+                      Resemblance
+                    </label>
+                    <span className="text-xs font-mono text-muted-foreground">{resemblance.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={resemblance}
+                    onChange={(e) => setResemblance(parseFloat(e.target.value))}
+                    className="w-full accent-primary h-1 bg-border rounded-lg appearance-none cursor-pointer"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Structure preservation (Higher = closer to original)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {status && (
+            <div className="text-xs text-muted-foreground flex items-center gap-2 p-2 bg-muted rounded">
+              <Loader2 size={12} className="animate-spin" />
+              {status}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Section: History */}
+      <div className="flex-1 overflow-y-auto min-h-[200px] border-t border-border pt-4">
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Session History</h3>
+            <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">{generations.length}</span>
+          </div>
+          <GenerationsGrid 
+            generations={generations} 
+            onUpdateImage={onUpdateImage}
+          />
       </div>
     </div>
   );

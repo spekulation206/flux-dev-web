@@ -1,0 +1,25 @@
+Fix: Gemini image pricing TypeScript error in pricing.ts
+
+Date: 2025-11-21
+
+Description:
+- Resolved a TypeScript union type error in the Gemini pricing helper for the Nano Banana image model (`gemini-2.5-flash-image`).
+
+Root cause:
+- The `calculateGeminiCost` function accessed `pricing.pricePerImage` directly on a union type where some variants do not define `pricePerImage`. TypeScript correctly reported that `pricePerImage` does not exist on all members of the union.
+
+Changes made:
+- Updated the Nano Banana per-image pricing branch in `src/lib/pricing.ts` to use a property existence type guard before accessing `pricePerImage`:
+  - Added a `"pricePerImage" in pricing` check inside the `gemini-2.5-flash-image` conditional and only return `pricing.pricePerImage` when that property is present.
+
+Files touched:
+- src/lib/pricing.ts
+
+Testing:
+- Ran `npm run build` from the project root.
+- Confirmed that the Next.js production build and TypeScript checks complete successfully with no errors.
+
+
+
+
+

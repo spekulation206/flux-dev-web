@@ -1,0 +1,27 @@
+Fix: Ensure Background Image Processing and Upload
+
+Description:
+Modified the image generation and prediction flows to ensure images are uploaded to Google Photos regardless of the client's connection state. This addresses the issue where backgrounding the app on iOS (or closing the tab) would interrupt the "upload after generate" sequence which was previously orchestrated by the client.
+
+Changes:
+1.  Refactored Google Photos logic:
+    -   Created `src/lib/googlePhotosServer.ts` for server-side upload logic.
+    -   Updated `src/app/api/google-photos/upload/route.ts` to use this shared library.
+
+2.  Gemini Generation (`src/app/api/gemini/generate/route.ts`):
+    -   Added server-side upload to Google Photos immediately after generation.
+    -   This ensures that once the server has the image, it saves it, even if the client disconnects before receiving the response.
+
+3.  Replicate Prediction (`src/app/api/replicate/prediction/route.ts` & `src/app/api/webhooks/replicate/route.ts`):
+    -   Implemented a Webhook workflow for Replicate predictions.
+    -   The prediction endpoint now registers a webhook URL and stores the user's Google Access Token (retrieved from cookies) and job context in Firestore.
+    -   Created a new webhook endpoint that listens for "completed" events from Replicate.
+    -   When a job completes, the webhook retrieves the context from Firestore, downloads the image, and uploads it to Google Photos.
+    -   This decouples the upload process from the client entirely.
+
+4.  Build Fix (2025-11-24):
+    -   Updated `src/lib/googlePhotosServer.ts` to explicitly accept `Buffer` in addition to `ArrayBuffer` to fix a TypeScript build error where `Buffer.from()` was returning a type incompatible with the strict `ArrayBuffer` parameter.
+
+Verification:
+-   Gemini flow: Check logs for "Server-side auto-save to Google Photos successful".
+-   Replicate flow: Check logs for "Replicate Webhook for [id]" and "Webhook uploaded [id] to Google Photos".

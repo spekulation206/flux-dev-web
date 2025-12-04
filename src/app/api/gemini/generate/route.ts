@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { prompt, image, model, resolution } = body;
+    const { prompt, image, model, resolution, aspectRatio, additionalImages } = body;
 
     // Default to a stable model if not provided
     const targetModel = model || "gemini-2.5-flash-image";
@@ -24,22 +24,73 @@ export async function POST(request: Request) {
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;
 
-    const payload = {
+    // Configure image generation options for Nano Banana / Nano Banana Pro
+    // See: https://ai.google.dev/gemini-api/docs/image-generation
+    const generationConfig: any = {};
+
+    // Force image-only responses for image models
+    if (targetModel === "gemini-2.5-flash-image" || targetModel === "gemini-3-pro-image-preview") {
+      generationConfig.responseModalities = ["IMAGE"];
+      generationConfig.imageConfig = {};
+
+      // Aspect ratio is optional – default behavior if omitted is 1:1
+      if (aspectRatio && typeof aspectRatio === "string") {
+        generationConfig.imageConfig.aspectRatio = aspectRatio;
+      }
+
+      // Only Gemini 3 Pro Image Preview supports 1K / 2K / 4K output
+      if (
+        targetModel === "gemini-3-pro-image-preview" &&
+        typeof resolution === "string" &&
+        ["1K", "2K", "4K"].includes(resolution.toUpperCase())
+      ) {
+        generationConfig.imageConfig.imageSize = resolution.toUpperCase();
+      }
+
+      // Clean up empty imageConfig if nothing was set
+      if (Object.keys(generationConfig.imageConfig).length === 0) {
+        delete generationConfig.imageConfig;
+      }
+
+      if (Object.keys(generationConfig).length === 0) {
+        // No-op, do not attach empty config
+      }
+    }
+
+    const parts = [
+      { text: finalPrompt },
+      {
+        inline_data: {
+          mime_type: "image/png",
+          data: image,
+        },
+      },
+    ];
+
+    // Add additional images if present
+    if (additionalImages && Array.isArray(additionalImages)) {
+      additionalImages.forEach((imgData: string) => {
+        parts.push({
+          inline_data: {
+            mime_type: "image/png",
+            data: imgData,
+          },
+        });
+      });
+    }
+
+    const payload: any = {
       contents: [
         {
           role: "user",
-          parts: [
-            { text: finalPrompt },
-            {
-              inline_data: {
-                mime_type: "image/png",
-                data: image,
-              },
-            },
-          ],
+          parts: parts,
         },
       ],
     };
+
+    if (Object.keys(generationConfig).length > 0) {
+      payload.generationConfig = generationConfig;
+    }
 
     const response = await fetch(url, {
       method: "POST",

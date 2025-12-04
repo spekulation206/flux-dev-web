@@ -11,3 +11,7 @@ Fixed the "Creative Upscaler" implementation in `UpscaleTool.tsx`.
 
 The new UI allows users to fine-tune the creative upscale process with prompts and control sliders.
 
+
+
+
+

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { uploadToGooglePhotos } from "@/lib/googlePhotos";
+import { saveSessionsToStorage, loadSessionsFromStorage } from "@/lib/storage";
 
 export interface Generation {
   id: string;
@@ -13,12 +14,16 @@ export interface Generation {
   model?: string;
   error?: string;
   createdAt: number;
+  predictionId?: string; // For Replicate recovery
+  remoteUrl?: string;    // For download recovery
+  provider?: "replicate" | "gemini" | "other";
 }
 
 export interface Session {
   id: string;
   originalImage: File;
   currentImage: File;
+  additionalImages: File[];
   thumbnailUrl: string;
   status: "idle" | "processing" | "completed" | "error";
   statusMessage?: string;
@@ -30,9 +35,14 @@ interface SessionContextType {
   sessions: Session[];
   activeSessionId: string | null;
   activeSession: Session | undefined;
+  googleConnected: boolean;
+  checkGoogleConnection: () => Promise<void>;
   addSession: (file: File) => void;
   setActiveSessionId: (id: string | null) => void;
   updateSessionImage: (id: string, file: File, metadata?: { prompt?: string; model?: string }) => void;
+  addAdditionalImage: (id: string, file: File) => void;
+  removeAdditionalImage: (id: string, fileIndex: number) => void;
+  createSessionWithReferences: (file: File, additionalImages: File[]) => void;
   updateSessionStatus: (id: string, status: Session["status"], message?: string) => void;
   addGeneration: (sessionId: string, generation: Generation) => void;
   updateGeneration: (sessionId: string, generationId: string, updates: Partial<Generation>) => void;
@@ -44,12 +54,64 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const checkGoogleConnection = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/google/status");
+      const data = await res.json();
+      setGoogleConnected(!!data.connected);
+    } catch (e) {
+      console.error("Failed to check Google connection", e);
+      setGoogleConnected(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkGoogleConnection();
+    
+    // Check query param for immediate feedback after redirect
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("google_connected") === "true") {
+        setGoogleConnected(true);
+        window.history.replaceState({}, "", "/");
+      }
+    }
+  }, [checkGoogleConnection]);
+
+  // Load sessions from IndexedDB on mount
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { sessions: savedSessions, activeId } = await loadSessionsFromStorage();
+        if (savedSessions.length > 0) {
+          setSessions(savedSessions);
+          setActiveSessionId(activeId);
+        }
+      } catch (e) {
+        console.error("Failed to load sessions", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    load();
+  }, []);
+
+  // Save sessions to IndexedDB on change
+  useEffect(() => {
+    if (isLoaded) {
+      saveSessionsToStorage(sessions, activeSessionId);
+    }
+  }, [sessions, activeSessionId, isLoaded]);
 
   const addSession = useCallback((file: File) => {
     const newSession: Session = {
       id: uuidv4(),
       originalImage: file,
       currentImage: file,
+      additionalImages: [],
       thumbnailUrl: URL.createObjectURL(file),
       status: "idle",
       generations: [],
@@ -79,11 +141,48 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     uploadToGooglePhotos(file, description)
       .then(() => console.log("Uploaded to Google Photos"))
       .catch((err) => {
-        // Ignore "not connected" errors to avoid noise for non-connected users
-        if (err.message !== "Google Photos not connected") {
+        // If we get a "not connected" error, update our state immediately
+        if (err.message === "Google Photos not connected") {
+          setGoogleConnected(false);
+        } else {
           console.error("Failed to upload to Google Photos:", err);
         }
       });
+  }, []);
+
+  const addAdditionalImage = useCallback((id: string, file: File) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? { ...s, additionalImages: [...s.additionalImages, file] }
+          : s
+      )
+    );
+  }, []);
+
+  const createSessionWithReferences = useCallback((file: File, additionalImages: File[]) => {
+    const newSession: Session = {
+      id: uuidv4(),
+      originalImage: file,
+      currentImage: file,
+      additionalImages: [...additionalImages], // Copy references
+      thumbnailUrl: URL.createObjectURL(file),
+      status: "idle",
+      generations: [],
+      createdAt: Date.now(),
+    };
+    setSessions((prev) => [newSession, ...prev]);
+    setActiveSessionId(newSession.id);
+  }, []);
+
+  const removeAdditionalImage = useCallback((id: string, fileIndex: number) => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? { ...s, additionalImages: s.additionalImages.filter((_, i) => i !== fileIndex) }
+          : s
+      )
+    );
   }, []);
 
   const updateSessionStatus = useCallback((id: string, status: Session["status"], message?: string) => {
@@ -131,9 +230,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         sessions,
         activeSessionId,
         activeSession,
+        googleConnected,
+        checkGoogleConnection,
         addSession,
         setActiveSessionId,
         updateSessionImage,
+        addAdditionalImage,
+        removeAdditionalImage,
+        createSessionWithReferences,
         updateSessionStatus,
         addGeneration,
         updateGeneration,

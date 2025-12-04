@@ -32,13 +32,19 @@ export async function GET(
         let cost = 0;
         
         // Check if this is a Kontext model (per-image pricing)
-        const isKontextModel = modelName.includes("flux-kontext") || 
+        const isKontextModel = modelName.includes("flux-2") || 
+                              modelName.includes("flux-kontext") || 
                               modelName.includes("qwen-image-edit") || 
                               modelName.includes("seedream-4");
         
         if (isKontextModel) {
+          // Extract go_fast and resolution from input if available
+          const input = prediction.input || {};
+          const goFast = input.go_fast !== undefined ? input.go_fast : true; // Default to true for Flux 2 Dev
+          const resolution = input.resolution || undefined;
+          
           // Use per-image pricing for Kontext models
-          cost = calculateReplicateCost(modelName, undefined, true);
+          cost = calculateReplicateCost(modelName, undefined, true, goFast, resolution);
         } else if (prediction.metrics?.predict_time) {
           // Use time-based pricing for legacy models
           const predictTime = prediction.metrics.predict_time;
@@ -47,11 +53,14 @@ export async function GET(
         
         if (cost > 0) {
           // Record cost with deduplication
+          const input = prediction.input || {};
           recordCost("replicate", cost, { 
               predictionId: prediction.id, 
               model: modelName, 
               duration: prediction.metrics?.predict_time,
-              pricingType: isKontextModel ? "per-image" : "time-based"
+              pricingType: isKontextModel ? "per-image" : "time-based",
+              goFast: input.go_fast,
+              resolution: input.resolution
           }, prediction.id).catch(e => console.error("Cost record error", e));
         }
     }

@@ -1,0 +1,19 @@
+Fix Google Photos Token Refresh Issue
+
+Problem:
+The user reported that Google Photos uploads stopped working, but the UI still showed as "Connected".
+Logs showed `invalid_grant` errors with "Token has been expired or revoked" during the token refresh process.
+The `status` endpoint merely checks for the existence of cookies, not their validity, causing the UI to be out of sync with the actual auth state.
+
+Root Cause:
+When the refresh token expires or is revoked, the server fails to refresh the access token but does not clear the invalid cookies. Consequently, `getAccessToken()` returns undefined, the upload fails with 401, but the cookies persist, fooling the status check.
+
+Solution:
+1.  Update `src/lib/googlePhotosServer.ts` to explicitly delete `google_access_token` and `google_refresh_token` cookies when the token refresh endpoint returns an error (specifically `invalid_grant` or 400/401).
+2.  Update `src/app/api/auth/google/status/route.ts` to call `getAccessToken()` instead of just checking cookies. This forces a token validation/refresh on page load. If the token is invalid, `getAccessToken` will clear the cookies, and the status endpoint will correctly report "disconnected".
+
+Verification:
+- Redeploy to Cloud Run.
+- Reload the page (which calls `/api/auth/google/status`).
+- If the token is invalid, the server will clear cookies, and the UI will switch to "Connect Google Photos".
+- User can then re-authenticate.

@@ -1,0 +1,16 @@
+Updated Seedream model from version 4 to 4.5 in KontextTool.
+
+Changes:
+- Updated model ID from "seedream-4" to "seedream-4.5"
+- Updated Replicate model ID from "bytedance/seedream-4" to "bytedance/seedream-4.5"
+- Implemented new schema parameters:
+  * size: "2K", "4K", or "custom" (replaces hardcoded resolution)
+  * aspect_ratio: "match_input_image" and standard ratios (replaces hardcoded "4:3")
+  * width/height: Custom dimensions when size="custom" (1024-4096px range)
+  * sequential_image_generation: "disabled" or "auto"
+  * max_images: 1-15 for sequential generation
+- Removed disable_safety_checker (not in new schema)
+- Added UI controls for all new Seedream 4.5 parameters
+- Updated image resize logic to use Seedream-specific size parameter
+
+The new schema supports more flexible resolution and aspect ratio options, plus sequential image generation capabilities.

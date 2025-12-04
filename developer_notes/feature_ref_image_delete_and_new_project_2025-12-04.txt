@@ -1,0 +1,5 @@
+Added support for deleting reference images by tapping on them.
+Added functionality to start a new project from a generated image, inheriting reference images from the original project.
+- Updated SessionContext to support createSessionWithReferences.
+- Updated GenerationsGrid to support onStartNewSession.
+- Updated KontextTool to handle deletion interactions and pass the new session handler.

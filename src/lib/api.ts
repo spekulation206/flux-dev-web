@@ -44,14 +44,21 @@ export async function pollPrediction(id: string): Promise<any> {
   return response.json();
 }
 
-export async function generateGemini(prompt: string, imageBase64: string, model: string = "gemini-1.5-flash", resolution?: string): Promise<any> {
+export async function generateGemini(
+  prompt: string, 
+  imageBase64: string, 
+  model: string = "gemini-1.5-flash", 
+  resolution?: string,
+  additionalImagesBase64: string[] = []
+): Promise<any> {
   // Remove data:image/png;base64, prefix if present
   const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const additionalBase64Data = additionalImagesBase64.map(img => img.replace(/^data:image\/\w+;base64,/, ""));
 
   const response = await fetch("/api/gemini/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, image: base64Data, model, resolution }),
+    body: JSON.stringify({ prompt, image: base64Data, model, resolution, additionalImages: additionalBase64Data }),
   });
 
   if (!response.ok) {

@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { Loader2, Wand2 } from "lucide-react";
 import { PromptHistory } from "./PromptHistory";
+import { useSession } from "@/context/SessionContext";
+import { clsx } from "clsx";
 
 interface PromptInputProps {
   placeholder?: string;
@@ -24,6 +26,7 @@ export function PromptInput({
   section,
 }: PromptInputProps) {
   const [value, setValue] = useState(initialValue);
+  const { googleConnected } = useSession();
 
   const handleSubmit = useCallback(async () => {
     const trimmedValue = value.trim();
@@ -72,7 +75,13 @@ export function PromptInput({
         <button
           onClick={handleSubmit}
           disabled={!value.trim() || isProcessing}
-          className="btn-primary whitespace-nowrap flex items-center gap-2 px-6 self-start"
+          className={clsx(
+            "whitespace-nowrap flex items-center gap-2 px-6 self-start",
+            !googleConnected 
+              ? "bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-sm py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+              : "btn-primary"
+          )}
+          title={!googleConnected ? "Google Photos not connected - generated images won't be backed up" : undefined}
         >
           {isProcessing ? (
             <Loader2 size={16} className="animate-spin" />

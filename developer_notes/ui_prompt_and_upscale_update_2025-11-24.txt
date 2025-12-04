@@ -41,3 +41,7 @@ Files touched:
 - `src/components/PromptHistory.tsx`
 - `src/components/tools/UpscaleTool.tsx`
 
+
+
+
+

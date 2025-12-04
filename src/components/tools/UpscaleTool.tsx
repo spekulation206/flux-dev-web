@@ -6,6 +6,7 @@ import { uploadToReplicate, predictReplicate, pollPrediction } from "@/lib/api";
 import { ModelSelector, ModelOption } from "../ModelSelector";
 import { useSession, Generation } from "@/context/SessionContext";
 import { GenerationsGrid } from "../GenerationsGrid";
+import { uploadToGooglePhotos } from "@/lib/googlePhotos";
 
 interface UpscaleToolProps {
   image: File;
@@ -33,6 +34,75 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
   // Get generations for the grid
   const generations = activeSession?.generations || [];
 
+  // Helper to download and finalize image
+  const downloadAndSaveImage = async (genId: string, url: string, promptLabel: string, modelId: string) => {
+    if (!activeSession) return;
+    
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], "upscaled.png", { type: "image/png" });
+    const localUrl = URL.createObjectURL(file);
+
+    updateGeneration(activeSession.id, genId, {
+      status: "completed",
+      imageUrl: localUrl,
+      file,
+      model: modelId,
+      error: undefined
+    });
+
+    // Update the main image too
+    onUpdateImage(file, { prompt: promptLabel, model: modelId });
+    
+    // Auto-save to Google Photos
+    const description = `Upscaled by Flux Web\nType: ${promptLabel}\nModel: ${modelId}`;
+    uploadToGooglePhotos(file, description).catch(err => {
+       console.log("Auto-save to GPhotos failed (non-fatal):", err);
+    });
+  };
+
+  const handleRetry = async (gen: Generation) => {
+    if (!activeSession) return;
+
+    // Smart Retry Logic
+    // Check predictionId regardless of provider string to be robust
+    if (gen.predictionId) {
+      try {
+        console.log("Attempting smart recovery for upscale:", gen.id);
+        updateGeneration(activeSession.id, gen.id, { status: "processing", error: undefined });
+        
+        let result = await pollPrediction(gen.predictionId);
+        
+        if (result.status === "succeeded") {
+           const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+           if (outputUrl) {
+             await downloadAndSaveImage(gen.id, outputUrl, gen.prompt || "Upscale", gen.model || model);
+             return;
+           }
+        } else if (result.status !== "failed" && result.status !== "canceled") {
+           // Still running, resume polling
+           while (result.status !== "succeeded" && result.status !== "failed" && result.status !== "canceled") {
+              await new Promise(r => setTimeout(r, 1000));
+              result = await pollPrediction(result.id);
+           }
+           if (result.status === "succeeded") {
+             const outputUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+             if (outputUrl) {
+               await downloadAndSaveImage(gen.id, outputUrl, gen.prompt || "Upscale", gen.model || model);
+               return;
+             }
+           }
+        }
+      } catch (e) {
+        console.log("Smart retry failed, falling back to fresh generation", e);
+      }
+    }
+
+    // Fallback: restart generation
+    console.log("Starting fresh upscale for:", gen.id);
+    handleGenerate(); 
+  };
+
   const handleGenerate = async () => {
     if (!activeSession) {
       alert("No active session selected");
@@ -48,6 +118,7 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       status: "processing",
       prompt: promptLabel,
       model,
+      provider: "replicate",
       createdAt: Date.now(),
     };
 
@@ -56,6 +127,8 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
     setIsProcessing(true);
     setStatus("Uploading image...");
     onProcessing?.(true, "Uploading image...");
+    
+    let currentPredictionId: string | undefined;
 
     try {
       const imageUrl = await uploadToReplicate(image);
@@ -90,6 +163,13 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       }
 
       const prediction = await predictReplicate(modelId, input);
+      currentPredictionId = prediction.id;
+      
+      // SAVE PREDICTION ID
+      updateGeneration(activeSession.id, generationId, {
+        predictionId: prediction.id,
+        provider: "replicate"
+      });
 
       let result = prediction;
       while (result.status !== "succeeded" && result.status !== "failed" && result.status !== "canceled") {
@@ -109,20 +189,9 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       if (result.status === "succeeded") {
         const outputUrl = result.output;
         const url = Array.isArray(outputUrl) ? outputUrl[0] : outputUrl;
-        const res = await fetch(url);
-        const blob = await res.blob();
-        const file = new File([blob], "upscaled.png", { type: "image/png" });
-        const localUrl = URL.createObjectURL(file);
-
-        updateGeneration(activeSession.id, generationId, {
-          status: "completed",
-          imageUrl: localUrl,
-          file,
-          model: modelId,
-        });
-
-        // Update the main image too
-        onUpdateImage(file, { prompt: promptLabel, model: modelId });
+        
+        await downloadAndSaveImage(generationId, url, promptLabel, modelId);
+        
         setStatus("Done!");
         onProcessing?.(false, "Done!");
       } else {
@@ -130,14 +199,19 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
       }
     } catch (e: any) {
       console.error(e);
-      alert(e.message);
       setStatus("Error");
       onProcessing?.(false, "Error");
+      
       if (activeSession) {
-        updateGeneration(activeSession.id, generationId, {
+        const updatePayload: any = {
           status: "failed",
           error: e.message || String(e),
-        });
+        };
+        if (currentPredictionId) {
+           updatePayload.predictionId = currentPredictionId;
+           updatePayload.provider = "replicate";
+        }
+        updateGeneration(activeSession.id, generationId, updatePayload);
       }
     } finally {
       setIsProcessing(false);
@@ -263,6 +337,7 @@ export function UpscaleTool({ image, onUpdateImage, onProcessing }: UpscaleToolP
           <GenerationsGrid 
             generations={generations} 
             onUpdateImage={onUpdateImage}
+            onRetry={handleRetry}
           />
       </div>
     </div>

@@ -1,0 +1,26 @@
+Nano Banana Resolution Fix - 2025-11-27
+
+Change:
+- Updated the Gemini image generation API call in `src/app/api/gemini/generate/route.ts` to send a proper `generationConfig` block for image models.
+- For `gemini-3-pro-image-preview` (Nano Banana Pro), we now set `generationConfig.imageConfig.imageSize` to `1K`, `2K`, or `4K` based on the `resolution` sent from the client, and force `responseModalities` to `IMAGE`.
+- For `gemini-2.5-flash-image` (Nano Banana), we send `responseModalities: ["IMAGE"]` and optionally pass through `aspectRatio` when provided.
+
+Reason / Root Cause:
+- The UI exposed 1K / 2K / 4K options for Nano Banana Pro, but the backend was only appending the resolution to the text prompt instead of using the documented `generationConfig.imageConfig.imageSize` parameter.
+- As a result, the Gemini API always defaulted to 1K outputs and ignored the selected 2K/4K options.
+
+Steps Taken:
+- Extended the request body parsing in the Gemini generate route to accept `aspectRatio`.
+- Built a `generationConfig` object for image models, setting:
+  - `responseModalities = ["IMAGE"]` for Nano Banana / Nano Banana Pro.
+  - `imageConfig.aspectRatio` when an `aspectRatio` string is provided.
+  - `imageConfig.imageSize` for `gemini-3-pro-image-preview` when `resolution` is one of `1K`, `2K`, `4K` (case-normalized to upper-case).
+- Attached `generationConfig` to the REST payload only when it has meaningful fields.
+
+Files Touched:
+- `src/app/api/gemini/generate/route.ts`
+
+Testing / Notes:
+- Confirmed via code inspection that the client already sends `resolution` as `1K`/`2K`/`4K` for `gemini-3-pro-image-preview` through `generateGemini`.
+- After this change, the Gemini API should honor 2K and 4K selections; 0.5K is not a supported size in the Nano Banana docs.
+- If future UI work adds aspect ratio controls, the backend is now ready to accept an `aspectRatio` field and forward it to the Gemini API.

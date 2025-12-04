@@ -1,0 +1,19 @@
+Implemented IndexedDB persistence for user sessions to allow them to survive page reloads and browser restarts for up to 27 hours.
+
+Reason:
+User requested that uploaded images and sessions stay available for 27 hours even if the web app is reloaded. Since the app is hosted on Google Cloud Run (stateless), server-side session storage for large files is expensive/complex. Client-side IndexedDB is the standard solution for this.
+
+Changes:
+1.  Installed `idb` package.
+2.  Created `src/lib/storage.ts`:
+    -   Uses `idb` to create/open 'flux_web_db'.
+    -   `saveSessionsToStorage`: Saves full session state + active ID.
+    -   `loadSessionsFromStorage`: Loads sessions, filters out those > 27 hours old, and regenerates `blob:` URLs for images (as these expire on reload).
+3.  Updated `src/context/SessionContext.tsx`:
+    -   Added `loadSessionsFromStorage` on mount.
+    -   Added `saveSessionsToStorage` on `sessions` or `activeSessionId` change.
+    -   Added `isLoaded` state to prevent overwriting storage with empty state during initialization.
+
+Verification:
+-   Code compiles without lint errors.
+-   Logic covers the 27-hour requirement and blob URL regeneration.

@@ -1,0 +1,20 @@
+Multi-Image Input Support Update
+Date: 2025-11-30
+
+Changes:
+1.  Updated `SessionContext` to include `additionalImages` in the `Session` interface. Added `addAdditionalImage` and `removeAdditionalImage` methods.
+2.  Updated `KontextTool` to include a UI for uploading and displaying additional reference images.
+3.  Updated `KontextTool` logic to handle additional images during generation:
+    *   For Gemini models: Images are converted to base64 and sent as inline data.
+    *   For Flux/Replicate models: Images are uploaded to Replicate (via `uploadToReplicate`) and their URLs are passed in the `input_images` array.
+4.  Updated `generateGemini` in `src/lib/api.ts` to accept an array of additional base64 images.
+5.  Updated `src/app/api/gemini/generate/route.ts` to accept `additionalImages` in the request body and add them to the `contents` parts of the Gemini API payload.
+
+Reason:
+User requested support for uploading multiple reference images for "nano banana" (Gemini) and "flux" models, as both support multi-image inputs.
+
+Files Modified:
+- src/context/SessionContext.tsx
+- src/components/tools/KontextTool.tsx
+- src/lib/api.ts
+- src/app/api/gemini/generate/route.ts

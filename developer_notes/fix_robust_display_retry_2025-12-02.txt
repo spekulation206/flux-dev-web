@@ -1,0 +1,19 @@
+Fix: Robust Display and Smart Retry for Generations
+
+Description:
+Fixed an issue where "load failed" errors during the final stage of image/video generation (fetching the blob or uploading) caused the "Retry" button to restart the entire generation process from scratch.
+
+Changes:
+1. Updated `Generation` interface in `SessionContext` to store `predictionId` and `provider`.
+2. Updated `KontextTool` (Images):
+   - Immediately saves `predictionId` to session state when Replicate generation starts.
+   - Implemented `handleRetry`: checks for existing `predictionId` and polls it instead of regenerating.
+   - Refactored `downloadAndSaveImage` to be reusable for recovery.
+   - Improved error handling to ensure image is displayed even if Google Photos auto-upload fails.
+3. Updated `VideoTool` (Video):
+   - Added `lastPredictionIdRef` to track recent generations.
+   - Added "Recover Last Generation" button/overlay when an error occurs but a prediction ID exists.
+   - Improved error messages to distinguish between generation failure and upload failure.
+
+Reason:
+Network congestion or race conditions during multi-image saving caused "load failed" errors. The previous retry logic blindly restarted generation, wasting time and credits. The new logic attempts to "recover" the successful generation first.

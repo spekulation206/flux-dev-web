@@ -4,38 +4,26 @@ import { useTheme } from "./ThemeProvider";
 import { Moon, Sun, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "@/lib/hooks";
+import { useSession } from "@/context/SessionContext";
 
 import { CostDisplay } from "./CostDisplay";
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const [googleConnected, setGoogleConnected] = useState(false);
+  const { googleConnected } = useSession();
   const [autoUpload, setAutoUpload] = useLocalStorage("autoUploadToGoogle", false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    
-    // Check server-side status
-    fetch("/api/auth/google/status")
-      .then(res => res.json())
-      .then(data => {
-        if (data.connected) {
-          setGoogleConnected(true);
-          // Always enable auto-upload if connected
-          setAutoUpload(true);
-        }
-      })
-      .catch(console.error);
-
-    // Check query param for immediate feedback after redirect
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("google_connected") === "true") {
-      setGoogleConnected(true);
-      setAutoUpload(true);
-      window.history.replaceState({}, "", "/");
-    }
   }, []);
+
+  // Sync auto-upload preference with connection status
+  useEffect(() => {
+    if (googleConnected) {
+      setAutoUpload(true);
+    }
+  }, [googleConnected, setAutoUpload]);
 
   const handleGoogleConnect = () => {
     window.location.href = "/api/auth/google/signin";

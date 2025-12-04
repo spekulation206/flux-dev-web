@@ -1,0 +1,28 @@
+Google Photos Quota Exceeded Error Analysis
+===========================================
+
+Date: 2025-12-02
+Issue: Images failing to save to Google Photos.
+Error Log: "Quota exceeded for quota 'concurrent write request' of service 'photoslibrary.googleapis.com' for consumer 'project:310306714158'."
+
+Root Cause:
+The application is hitting the "concurrent write request" quota limit of the Google Photos API. This happens when too many upload requests are sent simultaneously.
+
+Affected Files:
+- src/app/api/google-photos/upload/route.ts
+- src/lib/googlePhotosServer.ts
+
+Solution Implemented:
+1. Created a `fetchWithRetry` helper function in `src/lib/googlePhotosServer.ts`.
+2. The helper function implements exponential backoff (2^i * delay) with random jitter to avoid thundering herd problems.
+3. Updated defaults: **5 retries** (up from 3) and **3000ms base delay** (up from 1000ms) to ensure higher reliability during high concurrency.
+4. It retries requests on 429 (Too Many Requests), 403 (Forbidden), and 5xx (Server Error) status codes.
+5. Updated `findOrCreateAlbum`, `uploadBufferToGooglePhotos` (specifically the file upload and media item creation calls) to use `fetchWithRetry`.
+
+Build Fix (2025-12-02):
+- Fixed a TypeScript build error in `src/lib/storage.ts` where `instanceof File` checks were failing during the Next.js build process. Casted the variables to `any` before checking `instanceof` to resolve the type compatibility issue.
+
+Verification:
+- Local build passed.
+- Cloud Run deployment succeeded (revision flux-dev-web-00065-b98).
+- Verification will be done by monitoring future Cloud Run logs. The logs should show retries if the error occurs again, and eventually success.

@@ -8,14 +8,15 @@ export const PRICING = {
        pricePerSecond: 0.000575, // A40 pricing (often used for schnell)
     },
     // Kontext models - per-image pricing
-    "black-forest-labs/flux-kontext-dev": {
-      pricePerImage: 0.00025, // $0.00025 per image (0.025 cents)
+    "black-forest-labs/flux-2-dev": {
+      pricePerImageRegular: 0.012, // $0.012 per image (regular)
+      pricePerImageGoFast: 0.14, // $0.14 per image (go_fast)
     },
-    "black-forest-labs/flux-kontext-pro": {
-      pricePerImage: 0.0004, // $0.0004 per image (0.04 cents)
+    "black-forest-labs/flux-2-pro": {
+      pricePerMegapixel: 0.015, // $0.015 per megapixel
     },
-    "black-forest-labs/flux-kontext-max": {
-      pricePerImage: 0.0008, // $0.0008 per image (0.08 cents)
+    "black-forest-labs/flux-2-flex": {
+      pricePerMegapixel: 0.06, // $0.06 per megapixel
     },
     "qwen/qwen-image-edit": {
       pricePerImage: 0.03, // $0.03 per image
@@ -54,12 +55,42 @@ export const PRICING = {
 export function calculateReplicateCost(
   model: string, 
   durationSeconds?: number,
-  isPerImage: boolean = false
+  isPerImage: boolean = false,
+  goFast?: boolean,
+  resolution?: string
 ): number {
   const modelKey = Object.keys(PRICING.replicate).find((k) => model.includes(k));
   const pricing = modelKey
     ? PRICING.replicate[modelKey as keyof typeof PRICING.replicate]
     : PRICING.replicate.default;
+
+  // Handle Flux 2 Dev with go_fast option
+  if (model.includes("flux-2-dev") || modelKey === "black-forest-labs/flux-2-dev") {
+    if ("pricePerImageGoFast" in pricing && "pricePerImageRegular" in pricing) {
+      return goFast 
+        ? (pricing.pricePerImageGoFast as number)
+        : (pricing.pricePerImageRegular as number);
+    }
+  }
+
+  // Handle Flux 2 Pro and Flux 2 Flex with megapixel-based pricing
+  if (model.includes("flux-2-pro") || modelKey === "black-forest-labs/flux-2-pro" ||
+      model.includes("flux-2-flex") || modelKey === "black-forest-labs/flux-2-flex") {
+    if ("pricePerMegapixel" in pricing && resolution) {
+      // Parse resolution like "0.5 MP", "1 MP", "2 MP", "4 MP"
+      const mpMatch = resolution.match(/(\d+\.?\d*)\s*MP/i);
+      if (mpMatch) {
+        const megapixels = parseFloat(mpMatch[1]);
+        return megapixels * (pricing.pricePerMegapixel as number);
+      }
+      // Default to 1 MP if parsing fails
+      return pricing.pricePerMegapixel as number;
+    }
+    // Default to 1 MP if no resolution provided
+    if ("pricePerMegapixel" in pricing) {
+      return pricing.pricePerMegapixel as number;
+    }
+  }
 
   // Check if this model uses per-image pricing
   if (isPerImage && "pricePerImage" in pricing) {

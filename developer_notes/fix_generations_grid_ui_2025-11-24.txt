@@ -16,3 +16,7 @@ Fixed the "hidden buttons" issue for generated images and improved the Upscale t
 
 The UI is now more mobile-friendly and consistent across tools.
 
+
+
+
+

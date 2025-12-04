@@ -1,0 +1,23 @@
+Fix Video Download and Automatic Upload
+Date: 2025-11-30
+
+Description:
+Fixed two issues related to video generation in the VideoTool component:
+1. Added a manual "Download" button overlay on the video player to allow users to easily save the generated video.
+2. Implemented automatic upload of generated videos to Google Photos immediately after successful generation.
+
+Changes:
+- Modified `src/components/tools/VideoTool.tsx`:
+  - Added `Download` icon from `lucide-react`.
+  - Added `handleDownload` function to fetch the video blob and trigger a browser download.
+  - Added `uploadVideoToGooglePhotos` function to send the video blob to the existing `/api/google-photos/upload` endpoint.
+  - Updated `handleGenerate` to call `uploadVideoToGooglePhotos` after generation succeeds.
+  - Updated UI to show status messages during upload ("Uploading to Google Photos...", "Saved to Google Photos!").
+  - Added a download button overlay on the video player.
+
+Reason:
+Users reported inability to download generated videos and that videos were not syncing to Google Photos as expected.
+
+Verification:
+- Verified code logic for fetching blob from video URL.
+- Verified usage of existing Google Photos upload API which supports generic file uploads.

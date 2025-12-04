@@ -1,0 +1,51 @@
+Update: Replaced Flux Kontext Dev/Pro/Max with Flux 2 Dev, Flux 2 Pro, and Flux 2 Flex
+
+Date: 2025-01-27
+
+Changes Made:
+1. Updated `src/components/tools/KontextTool.tsx`:
+   - Removed Flux Kontext Dev, Flux Kontext Pro, and Flux Kontext Max from KONTEXT_MODELS
+   - Added Flux 2 Dev, Flux 2 Pro, and Flux 2 Flex to KONTEXT_MODELS
+   - Added go_fast state and toggle for Flux 2 Dev (defaults to true)
+   - Added flux2ProResolution state and selector for Flux 2 Pro and Flux 2 Flex (0.5 MP, 1 MP, 2 MP, 4 MP)
+   - Updated generateImage function to handle new API structure:
+     - Flux 2 Dev: uses input_images array, go_fast boolean parameter, disable_safety_checker: true
+     - Flux 2 Pro: uses input_images array, resolution parameter, safety_tolerance: 5
+     - Flux 2 Flex: uses input_images array, resolution parameter, prompt_upsampling: false, safety_tolerance: 5
+   - Updated UI to show go_fast checkbox when Flux 2 Dev is selected
+   - Updated UI to show resolution selector when Flux 2 Pro or Flux 2 Flex is selected
+
+2. Updated `src/lib/pricing.ts`:
+   - Removed pricing entries for flux-kontext-dev, flux-kontext-pro, flux-kontext-max
+   - Added Flux 2 Dev pricing:
+     - Regular: $0.012 per image
+     - Go Fast: $0.14 per image
+   - Added Flux 2 Pro pricing:
+     - $0.015 per megapixel
+   - Added Flux 2 Flex pricing:
+     - $0.06 per megapixel
+   - Updated calculateReplicateCost function:
+     - Added goFast and resolution parameters
+     - Added logic to handle Flux 2 Dev go_fast pricing
+     - Added logic to handle Flux 2 Pro and Flux 2 Flex megapixel-based pricing (parses resolution string)
+
+3. Updated `src/app/api/replicate/prediction/[id]/route.ts`:
+   - Updated isKontextModel check to include "flux-2" models
+   - Extract go_fast and resolution from prediction.input
+   - Pass go_fast and resolution to calculateReplicateCost
+   - Include go_fast and resolution in cost metadata
+
+Technical Details:
+- Flux 2 Dev model: black-forest-labs/flux-2-dev
+- Flux 2 Pro model: black-forest-labs/flux-2-pro
+- Flux 2 Flex model: black-forest-labs/flux-2-flex
+- Flux 2 Dev uses input_images array (not input_image), go_fast boolean, and disable_safety_checker: true
+- Flux 2 Pro uses input_images array, resolution enum ("0.5 MP", "1 MP", "2 MP", "4 MP"), and safety_tolerance: 5
+- Flux 2 Flex uses input_images array, resolution enum ("0.5 MP", "1 MP", "2 MP", "4 MP"), prompt_upsampling: false, and safety_tolerance: 5
+- Pricing is calculated based on go_fast flag for Dev and megapixel count for Pro and Flex
+- Backward compatibility maintained for old flux-kontext models in API route
+
+Files Modified:
+- src/components/tools/KontextTool.tsx
+- src/lib/pricing.ts
+- src/app/api/replicate/prediction/[id]/route.ts
